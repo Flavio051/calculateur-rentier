@@ -113,6 +113,8 @@ if (pb.length) { echecs += pb.length; erreurs.push(...pb.slice(0, 30).map(x => "
 
 if (echecs) {
   console.error("\n" + erreurs.join("\n"));
+  // Sur GitHub, les échecs apparaissent aussi en annotations, lisibles sans ouvrir les journaux
+  if (process.env.GITHUB_ACTIONS) for (const e of erreurs.slice(0, 10)) console.log(`::error title=Moteur::${e.replace(/%/g, "%25").replace(/\r?\n/g, "%0A")}`);
   console.error(`\n✗ ${echecs} problème(s) : ne pas publier cette version.`);
   process.exit(1);
 }

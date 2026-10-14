@@ -18,7 +18,12 @@ const ref = JSON.parse(readFileSync(path.join(racine, "tests", "reference-guisto
 const CLE = "calculateur-rentier-v3";
 const problemes = [];
 const ok = msg => console.log("  ✓ " + msg);
-const ko = msg => { problemes.push(msg); console.log("  ✗ " + msg); };
+const ko = msg => {
+  problemes.push(msg);
+  console.log("  ✗ " + msg);
+  // Sur GitHub, chaque échec apparaît aussi en annotation, lisible sans ouvrir les journaux
+  if (process.env.GITHUB_ACTIONS) console.log(`::error title=Page::${msg.replace(/%/g, "%25").replace(/\r?\n/g, "%0A")}`);
+};
 
 // Chart.js : la page le charge depuis cdnjs ; le test sert la même version depuis node_modules (hors ligne, reproductible)
 const CDN = html.match(/<script src="(https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/Chart\.js\/([\d.]+)\/chart\.umd\.min\.js)"/);
@@ -48,6 +53,9 @@ async function nouvellePage(largeur, hauteur, etatInitial) {
   await page.route(/^https:\/\/cdnjs\.cloudflare\.com\//, route => route.fulfill({ status: 200, contentType: "application/javascript", body: chartLocal }));
   await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.fulfill({ status: 200, contentType: "text/css", body: "" }));
   if (etatInitial) await page.addInitScript(([k, v]) => { try { localStorage.setItem(k, v); } catch {} }, [CLE, JSON.stringify(etatInitial)]);
+  // Passage de relais pour charger un profil : déposé en sessionStorage, recopié dans localStorage
+  // au tout début du chargement suivant (après l'enregistrement éventuel de la page qu'on quitte)
+  await page.addInitScript(k => { try { const s = sessionStorage.getItem("__etat_test"); if (s !== null){ localStorage.setItem(k, s); sessionStorage.removeItem("__etat_test"); } } catch {} }, CLE);
   await page.goto(adresse);
   await page.waitForSelector(".hero-age .big");
   return page;
@@ -102,7 +110,7 @@ try {
     const [lignesVilles, bouton] = await Promise.all([page.$$eval("#tbl tbody tr", l => l.length), page.innerText("#btn-cities")]);
     const annonce = num(bouton);
     lignesVilles === annonce && annonce > 100 ? ok(`mode villes : ${lignesVilles} lignes, comme annoncé sur le bouton`) : ko(`mode villes : ${lignesVilles} lignes pour « ${bouton} »`);
-    // Le réglage est mémorisé : après rechargement on retrouve le mode avancé
+    // Le réglage est mémorisé, même si on recharge aussitôt après le dernier clic (enregistrement au départ de la page)
     await page.reload(); await page.waitForSelector(".hero-age .big");
     a = await lireAffichage(page);
     a.age === "45" ? ok("réglages retrouvés après rechargement") : ko(`après rechargement : ${a.age} ans au lieu de 45 (sauvegarde cassée ?)`);
@@ -116,7 +124,7 @@ try {
     let bons = 0;
     const ecarts = [];
     for (const cas of ref.cas) {
-      await page.evaluate(([k, v]) => localStorage.setItem(k, v), [CLE, JSON.stringify(cas.etat)]);
+      await page.evaluate(v => sessionStorage.setItem("__etat_test", v), JSON.stringify(cas.etat));
       await page.reload();
       await page.waitForSelector(".hero-age .big");
       const a = await lireAffichage(page);

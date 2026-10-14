@@ -1389,7 +1389,9 @@ function closeTax(){ $("#tax-modal").hidden = true; }
 
 /* ---------- Boucle principale ---------- */
 let saveTimer = null;
-function save(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => store.set(KEY, state), 250); }
+function save(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = null; store.set(KEY, state); }, 250); }
+// Si on quitte ou recharge la page juste après un changement, on enregistre tout de suite
+addEventListener("pagehide", () => { if (saveTimer){ clearTimeout(saveTimer); saveTimer = null; store.set(KEY, state); } });
 function render(){
   const p = effParams(state);
   const d = destination(p.retireCountry, p.retireCity);
