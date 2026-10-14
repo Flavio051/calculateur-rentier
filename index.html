@@ -484,7 +484,7 @@ tr.city td:first-child{padding-left:42px}
         </div>
 
         <div class="opt">
-          <div class="opt-head"><label class="check"><input type="checkbox" id="chk-le" data-bool="lifeCustom"><span>Personnaliser l'<b>espérance de vie</b></span></label><i class="tip" tabindex="0" data-tip="Par défaut, l'espérance de vie du pays de retraite. Une valeur plus haute rend le plan plus prudent si tu consommes ton capital.">i</i></div>
+          <div class="opt-head"><label class="check"><input type="checkbox" id="chk-le" data-bool="lifeCustom"><span>Personnaliser l'<b>espérance de vie</b></span></label><i class="tip" tabindex="0" data-tip="Par défaut, 85 ans quel que soit le pays. Une valeur plus haute rend le plan plus prudent si tu consommes ton capital.">i</i></div>
           <div class="sub" data-show="lifeCustom">
             <div class="field">
               <label for="a-le">Espérance de vie (ans)</label>
@@ -584,7 +584,7 @@ tr.city td:first-child{padding-left:42px}
           <h4>Qualité de vie × coût de la vie</h4>
           <div class="btns">
             <button type="button" class="btn-ghost" id="btn-extended" data-act="extended">Liste étendue (74 pays)</button>
-            <button type="button" class="btn-ghost" id="btn-cities" data-act="cities">Mode villes (150)</button>
+            <button type="button" class="btn-ghost" id="btn-cities" data-act="cities">Mode villes</button>
           </div>
         </div>
         <p class="axis-note">À droite : meilleure qualité de vie (soleil, sécurité, santé). En haut : rente nécessaire plus faible, donc vie moins chère. Clique sur un drapeau pour le détail.</p>
@@ -721,34 +721,37 @@ const COUNTRIES_RAW = [
 
 // nom, coût de la vie (France = 1), soleil, sécurité, santé
 const CITIES_RAW = {
-FR:[["Paris",1.32,2.9,3.0,4.7],["Lyon",1.03,3.3,3.3,4.5],["Marseille",0.96,4.6,2.7,4.3],["Toulouse",0.95,3.9,3.3,4.4],["Nice",1.10,4.6,3.4,4.3],["Nantes",0.97,3.3,3.3,4.3],["Montpellier",0.95,4.5,3.1,4.4],["Strasbourg",0.96,2.9,3.4,4.4],["Bordeaux",1.01,3.8,3.2,4.4],["Lille",0.92,2.6,3.1,4.4],["Rennes",0.95,3.0,3.6,4.3],["Reims",0.84,2.8,3.5,4.0],["Toulon",0.90,4.6,3.3,4.0],["Saint-Étienne",0.79,3.4,3.3,4.0],["Le Havre",0.82,2.7,3.4,3.9],["Grenoble",0.92,3.6,3.0,4.4],["Dijon",0.86,3.2,3.7,4.2],["Angers",0.86,3.3,3.8,4.1],["Nîmes",0.85,4.4,3.1,4.0],["Chambéry",0.90,3.5,3.9,3.9],["Clermont-Ferrand",0.84,3.4,3.6,4.2],["Le Mans",0.80,3.2,3.7,3.9],["Aix-en-Provence",1.06,4.6,3.6,4.2],["Brest",0.80,2.8,3.8,4.1],["Tours",0.86,3.3,3.7,4.2],["Amiens",0.80,2.7,3.4,4.0],["Limoges",0.77,3.2,3.7,4.0],["Annecy",1.10,3.5,4.2,4.0],["Perpignan",0.82,4.7,3.0,3.9],["Metz",0.84,2.8,3.4,4.0],["Besançon",0.82,3.0,3.7,4.1],["Orléans",0.86,3.2,3.5,3.9],["Rouen",0.88,2.7,3.3,4.2],["Caen",0.86,2.8,3.7,4.1],["Mulhouse",0.79,3.0,3.0,3.9],["Nancy",0.84,2.9,3.5,4.2],["Avignon",0.86,4.5,3.0,3.9],["Poitiers",0.81,3.5,3.8,4.0],["La Rochelle",0.96,3.9,4.0,3.9],["Pau",0.84,3.7,3.9,3.9],["Biarritz",1.12,3.6,4.2,3.9],["Bayonne",0.95,3.6,3.9,3.9],["Ajaccio",0.98,4.7,3.8,3.6],["Cannes",1.14,4.6,3.6,4.0],["Antibes",1.09,4.6,3.7,4.0],["Saint-Malo",0.99,3.2,4.1,3.8],["Vannes",0.93,3.3,4.1,3.8]],
-US:[["New York",1.58,3.4,3.0,4.6],["Los Angeles",1.42,4.8,2.8,4.5],["San Francisco",1.62,4.0,2.8,4.6],["Miami",1.32,4.8,2.9,4.3],["Austin",1.15,4.4,3.3,4.3],["Chicago",1.20,3.2,2.6,4.4],["Boston",1.45,3.2,3.4,4.8],["Seattle",1.38,2.6,3.0,4.5],["San Diego",1.38,4.8,3.5,4.4],["Denver",1.18,4.3,3.1,4.3],["Phoenix",1.05,5.0,3.0,4.2],["Las Vegas",1.02,5.0,2.9,3.9],["Houston",1.00,4.2,2.7,4.5],["Atlanta",1.08,4.0,2.7,4.3],["Orlando",1.05,4.7,3.1,4.2],["Tampa",1.05,4.7,3.2,4.2]],
-CH:[["Zurich",1.78,2.9,4.8,4.9],["Genève",1.80,3.2,4.4,4.9],["Bâle",1.62,3.0,4.6,4.8],["Lausanne",1.64,3.2,4.6,4.8],["Berne",1.55,3.0,4.9,4.8],["Lucerne",1.58,2.9,4.9,4.6],["Lugano",1.52,3.9,4.8,4.6],["Saint-Gall",1.46,2.7,4.9,4.6],["Neuchâtel",1.42,3.0,4.8,4.5],["Fribourg",1.43,3.0,4.8,4.5],["Sion",1.40,3.8,4.9,4.4],["Montreux",1.56,3.3,4.9,4.5],["Zoug",1.82,3.0,4.9,4.6],["Winterthour",1.52,2.8,4.8,4.6],["Bienne",1.40,2.9,4.6,4.5],["Coire",1.45,3.2,4.9,4.4]],
-BE:[["Bruxelles",1.02,2.6,3.2,4.5],["Anvers",0.98,2.6,3.4,4.4],["Gand",0.96,2.6,3.8,4.4],["Bruges",0.94,2.7,4.1,4.2],["Liège",0.86,2.7,3.2,4.3],["Namur",0.87,2.7,3.9,4.1],["Louvain",0.98,2.6,4.1,4.6],["Charleroi",0.80,2.6,2.9,4.0],["Mons",0.82,2.6,3.5,4.0],["Malines",0.93,2.6,3.9,4.1],["Hasselt",0.88,2.7,4.1,4.1],["Ostende",0.91,2.9,3.8,4.0],["Courtrai",0.87,2.7,4.0,4.0],["Waterloo",1.03,2.6,4.2,4.1]],
+FR:[["Paris",1.32,2.9,3.0,4.7],["Lyon",1.03,3.3,3.3,4.5],["Marseille",0.96,4.6,2.7,4.3],["Toulouse",0.95,3.9,3.3,4.4],["Nice",1.1,4.6,3.4,4.3],["Nantes",0.97,3.3,3.3,4.3],["Montpellier",0.95,4.5,3.1,4.4],["Strasbourg",0.96,2.9,3.4,4.4],["Bordeaux",1.01,3.8,3.2,4.4],["Lille",0.92,2.6,3.1,4.4],["Rennes",0.95,3.0,3.6,4.3],["Reims",0.84,2.8,3.5,4.0],["Toulon",0.9,4.6,3.3,4.0],["Saint-Étienne",0.79,3.4,3.3,4.0],["Le Havre",0.82,2.7,3.4,3.9],["Grenoble",0.92,3.6,3.0,4.4],["Dijon",0.86,3.2,3.7,4.2],["Angers",0.86,3.3,3.8,4.1],["Nîmes",0.85,4.4,3.1,4.0],["Chambéry",0.9,3.5,3.9,3.9],["Clermont-Ferrand",0.84,3.4,3.6,4.2],["Le Mans",0.8,3.2,3.7,3.9],["Aix-en-Provence",1.06,4.6,3.6,4.2],["Brest",0.8,2.8,3.8,4.1],["Tours",0.86,3.3,3.7,4.2],["Amiens",0.8,2.7,3.4,4.0],["Limoges",0.77,3.2,3.7,4.0],["Annecy",1.1,3.5,4.2,4.0],["Perpignan",0.82,4.7,3.0,3.9],["Metz",0.84,2.8,3.4,4.0],["Besançon",0.82,3.0,3.7,4.1],["Orléans",0.86,3.2,3.5,3.9],["Rouen",0.88,2.7,3.3,4.2],["Caen",0.86,2.8,3.7,4.1],["Mulhouse",0.79,3.0,3.0,3.9],["Nancy",0.84,2.9,3.5,4.2],["Avignon",0.86,4.5,3.0,3.9],["Poitiers",0.81,3.5,3.8,4.0],["La Rochelle",0.96,3.9,4.0,3.9],["Pau",0.84,3.7,3.9,3.9],["Biarritz",1.12,3.6,4.2,3.9],["Bayonne",0.95,3.6,3.9,3.9],["Ajaccio",0.98,4.7,3.8,3.6],["Cannes",1.14,4.6,3.6,4.0],["Antibes",1.09,4.6,3.7,4.0],["Saint-Malo",0.99,3.2,4.1,3.8],["Vannes",0.93,3.3,4.1,3.8],["Annemasse",1.15,3.4,3.5,4.1],["Lons-le-Saunier",0.8,3.3,4.0,3.8],["Colmar",0.92,3.1,3.9,4.0],["Île de Ré",1.25,3.8,4.4,3.6],["Corse",1.05,4.4,3.7,3.7],["Guadeloupe",1.16,4.5,2.4,3.5],["Martinique",1.14,4.5,2.5,3.6],["La Réunion",1.09,4.3,3.5,3.9],["Guyane française",1.14,3.4,1.8,3.0],["Polynésie française",1.39,4.6,3.7,3.5],["Saint-Pierre-et-Miquelon",1.3,2.4,4.6,3.3]],
+US:[["New York",1.58,3.4,3.0,4.6],["Los Angeles",1.42,4.8,2.8,4.5],["San Francisco",1.62,4.0,2.8,4.6],["Miami",1.32,4.8,2.9,4.3],["Austin",1.15,4.4,3.3,4.3],["Chicago",1.2,3.2,2.6,4.4],["Boston",1.45,3.2,3.4,4.8],["Seattle",1.38,2.6,3.0,4.5],["San Diego",1.38,4.8,3.5,4.4],["Denver",1.18,4.3,3.1,4.3],["Phoenix",1.05,5.0,3.0,4.2],["Las Vegas",1.02,5.0,2.9,3.9],["Houston",1.0,4.2,2.7,4.5],["Atlanta",1.08,4.0,2.7,4.3],["Orlando",1.05,4.7,3.1,4.2],["Tampa",1.05,4.7,3.2,4.2],["Washington",1.4,3.7,3.0,4.6],["Nouvelle-Orléans",1.02,4.3,2.3,4.0],["Dallas",1.05,4.3,2.9,4.4],["Nashville",1.08,4.0,3.1,4.4],["Portland",1.2,2.8,2.8,4.4]],
+CH:[["Zurich",1.78,2.9,4.8,4.9],["Genève",1.8,3.2,4.4,4.9],["Bâle",1.62,3.0,4.6,4.8],["Lausanne",1.64,3.2,4.6,4.8],["Berne",1.55,3.0,4.9,4.8],["Lucerne",1.58,2.9,4.9,4.6],["Lugano",1.52,3.9,4.8,4.6],["Saint-Gall",1.46,2.7,4.9,4.6],["Neuchâtel",1.42,3.0,4.8,4.5],["Fribourg",1.43,3.0,4.8,4.5],["Sion",1.4,3.8,4.9,4.4],["Montreux",1.56,3.3,4.9,4.5],["Zoug",1.82,3.0,4.9,4.6],["Winterthour",1.52,2.8,4.8,4.6],["Bienne",1.4,2.9,4.6,4.5],["Coire",1.45,3.2,4.9,4.4],["Locarno",1.45,4.0,4.9,4.4]],
+BE:[["Bruxelles",1.02,2.6,3.2,4.5],["Anvers",0.98,2.6,3.4,4.4],["Gand",0.96,2.6,3.8,4.4],["Bruges",0.94,2.7,4.1,4.2],["Liège",0.86,2.7,3.2,4.3],["Namur",0.87,2.7,3.9,4.1],["Louvain",0.98,2.6,4.1,4.6],["Charleroi",0.8,2.6,2.9,4.0],["Mons",0.82,2.6,3.5,4.0],["Malines",0.93,2.6,3.9,4.1],["Hasselt",0.88,2.7,4.1,4.1],["Ostende",0.91,2.9,3.8,4.0],["Courtrai",0.87,2.7,4.0,4.0],["Waterloo",1.03,2.6,4.2,4.1],["Tournai",0.84,2.7,3.9,3.9],["Arlon",0.92,2.6,4.2,3.9]],
 CA:[["Montréal",0.96,2.6,4.1,4.1],["Québec",0.88,2.4,4.6,4.1],["Toronto",1.26,2.6,3.9,4.4],["Vancouver",1.33,2.4,3.8,4.3],["Ottawa",1.08,2.6,4.4,4.3],["Calgary",1.06,3.0,4.1,4.2],["Edmonton",0.99,2.8,3.7,4.1],["Victoria",1.18,2.8,4.4,4.1],["Halifax",1.01,2.4,4.2,4.0],["Winnipeg",0.92,2.8,3.4,4.0]],
-TH:[["Bangkok",0.52,4.4,3.7,4.5],["Chiang Mai",0.40,4.5,4.1,4.1],["Phuket",0.56,4.8,3.8,4.1],["Pattaya",0.46,4.8,3.4,3.9],["Hua Hin",0.46,4.8,4.1,3.8],["Koh Samui",0.56,4.8,3.9,3.6],["Krabi",0.45,4.8,4.0,3.4],["Chiang Rai",0.36,4.4,4.2,3.5],["Khon Kaen",0.35,4.6,4.1,3.6]],
-ES:[["Madrid",0.92,4.5,3.8,4.4],["Barcelone",0.96,4.5,3.3,4.4],["Valence",0.76,4.7,3.8,4.2],["Séville",0.72,4.9,3.6,4.1],["Malaga",0.82,4.9,3.9,4.1],["Alicante",0.72,4.9,3.8,4.0],["Palma",0.92,4.7,3.9,4.0],["Bilbao",0.86,3.3,4.1,4.3],["Las Palmas",0.76,4.9,3.8,4.0]],
-ID:[["Bali (Canggu)",0.50,4.7,3.6,3.2],["Ubud",0.40,4.5,3.9,3.0],["Jakarta",0.46,4.2,3.2,3.6],["Yogyakarta",0.30,4.5,3.9,3.1],["Lombok",0.36,4.8,3.6,2.6]],
-MA:[["Marrakech",0.47,4.8,3.4,3.0],["Casablanca",0.50,4.4,3.1,3.2],["Agadir",0.42,4.9,3.6,2.8],["Tanger",0.44,4.4,3.4,2.9]],
-CN:[["Shanghai",0.86,3.2,4.5,4.3],["Pékin",0.82,3.6,4.5,4.3],["Shenzhen",0.82,3.9,4.5,4.1],["Chengdu",0.56,2.8,4.4,3.9]],
-PH:[["Manille",0.50,4.4,2.6,3.4],["Cebu",0.42,4.6,2.9,3.0],["Dumaguete",0.35,4.6,3.3,2.7]],
-MY:[["Kuala Lumpur",0.53,4.2,3.5,4.1],["Penang",0.46,4.5,3.9,4.0],["Johor Bahru",0.42,4.3,3.4,3.6]],
-IT:[["Milan",1.06,3.6,3.5,4.4],["Rome",0.96,4.4,3.4,4.1],["Naples",0.76,4.6,2.9,3.7]],
-KR:[["Séoul",0.93,3.4,4.5,4.7],["Busan",0.76,3.8,4.5,4.5]],
+TH:[["Bangkok",0.52,4.4,3.7,4.5],["Chiang Mai",0.4,4.5,4.1,4.1],["Phuket",0.56,4.8,3.8,4.1],["Pattaya",0.46,4.8,3.4,3.9],["Hua Hin",0.46,4.8,4.1,3.8],["Koh Samui",0.56,4.8,3.9,3.6],["Krabi",0.45,4.8,4.0,3.4],["Chiang Rai",0.36,4.4,4.2,3.5],["Khon Kaen",0.35,4.6,4.1,3.6],["Koh Phangan",0.5,4.7,3.9,3.2],["Rawai",0.52,4.8,4.0,4.0],["Koh Tao",0.5,4.7,4.0,3.0]],
+ES:[["Madrid",0.92,4.5,3.8,4.4],["Barcelone",0.96,4.5,3.3,4.4],["Valence",0.76,4.7,3.8,4.2],["Séville",0.72,4.9,3.6,4.1],["Malaga",0.82,4.9,3.9,4.1],["Alicante",0.72,4.9,3.8,4.0],["Palma",0.92,4.7,3.9,4.0],["Bilbao",0.86,3.3,4.1,4.3],["Las Palmas",0.76,4.9,3.8,4.0],["Roses",0.82,4.6,4.1,3.8],["Canaries",0.76,4.9,3.9,4.0],["Ibiza",1.05,4.8,3.9,3.8]],
+ID:[["Canggu",0.5,4.7,3.6,3.2],["Ubud",0.4,4.5,3.9,3.0],["Jakarta",0.46,4.2,3.2,3.6],["Yogyakarta",0.3,4.5,3.9,3.1],["Lombok",0.36,4.8,3.6,2.6],["Amed",0.36,4.7,4.1,2.6],["Uluwatu",0.48,4.7,3.9,2.9]],
+MA:[["Marrakech",0.47,4.8,3.4,3.0],["Casablanca",0.5,4.4,3.1,3.2],["Agadir",0.42,4.9,3.6,2.8],["Tanger",0.44,4.4,3.4,2.9],["Rabat",0.47,4.5,3.8,3.3]],
+CN:[["Shanghai",0.86,3.2,4.5,4.3],["Pékin",0.82,3.6,4.5,4.3],["Shenzhen",0.82,3.9,4.5,4.1],["Chengdu",0.56,2.8,4.4,3.9],["Canton",0.72,3.4,4.4,4.1]],
+PH:[["Manille",0.5,4.4,2.6,3.4],["Cebu",0.42,4.6,2.9,3.0],["Dumaguete",0.35,4.6,3.3,2.7],["Panglao",0.4,4.7,3.3,2.6]],
+MY:[["Kuala Lumpur",0.53,4.2,3.5,4.1],["Penang",0.46,4.5,3.9,4.0],["Johor Bahru",0.42,4.3,3.4,3.6],["Langkawi",0.44,4.5,4.0,3.3]],
+IT:[["Milan",1.06,3.6,3.5,4.4],["Rome",0.96,4.4,3.4,4.1],["Naples",0.76,4.6,2.9,3.7],["Florence",0.98,4.2,3.7,4.3]],
+KR:[["Séoul",0.93,3.4,4.5,4.7],["Busan",0.76,3.8,4.5,4.5],["Gwangju",0.72,3.7,4.5,4.4]],
 KH:[["Phnom Penh",0.43,4.6,2.9,2.9],["Siem Reap",0.36,4.7,3.2,2.4]],
-PA:[["Panama City",0.70,4.4,3.3,3.6]]
+PA:[["Panama City",0.7,4.4,3.3,3.6]]
 };
 
 const COUNTRIES = COUNTRIES_RAW.map(r => ({ code:r[0], name:r[1], prep:r[2], col:r[3], tlo:r[4], thi:r[5], terr:!!r[6], sun:r[7], safe:r[8], health:r[9], le:r[10], featured:!!r[11], note:r[12], cities:[] }));
 const BY = Object.fromEntries(COUNTRIES.map(c => [c.code, c]));
 for (const [code, list] of Object.entries(CITIES_RAW)) BY[code].cities = list.map(([name, col, sun, safe, health]) => ({ name, col, sun, safe, health }));
 
+// Prépositions des territoires et régions (« en Guadeloupe », « aux Canaries »…)
+const CITY_WHERE = { "Guadeloupe":"en Guadeloupe", "Martinique":"en Martinique", "La Réunion":"à La Réunion", "Guyane française":"en Guyane française",
+  "Polynésie française":"en Polynésie française", "Corse":"en Corse", "Île de Ré":"sur l'Île de Ré", "Canaries":"aux Canaries" };
 function prepName(c){ return c.prep === "à" ? "à " + c.name : c.prep + " " + c.name; }
 function destination(code, cityName){
   const c = BY[code] || BY.FR;
   if (cityName){
     const ct = c.cities.find(x => x.name === cityName);
-    if (ct) return { ...c, city: ct.name, col: ct.col, sun: ct.sun, safe: ct.safe, health: ct.health, label: ct.name, where: "à " + ct.name + " (" + c.name + ")" };
+    if (ct) return { ...c, city: ct.name, col: ct.col, sun: ct.sun, safe: ct.safe, health: ct.health, label: ct.name, where: (CITY_WHERE[ct.name] || "à " + ct.name) + " (" + c.name + ")" };
   }
   return { ...c, city: null, label: c.name, where: prepName(c) };
 }
@@ -758,9 +761,11 @@ const locCol = (code, city) => destination(code, city).col;
 const SIMPLE_HYP = { activeCountry:"FR", activeCity:"", retireCountry:"FR", retireCity:"", returnRate:8, renteRate:5.5,
   inflationOn:false, realAccum:false, lifeCustom:true, lifeExp:85, consume:false, marginOn:false, reservesOn:false,
   noState:false, statePension:1800, statePensionAge:64 };
+const DEFAULT_LE = 85;   // espérance de vie retenue par défaut, quel que soit le pays
+const MIN_SAVINGS = 150; // épargne minimale retenue en mode auto, comme l'original
 function effParams(s){
   if (s.mode === "simple") return { ...s, ...SIMPLE_HYP, adv:false, savingsEff: s.savings, refCol: 1 };
-  const savingsEff = s.savingsAuto ? Math.max(0, s.salary - s.costActive) : s.savingsAdv;
+  const savingsEff = s.savingsAuto ? Math.max(MIN_SAVINGS, s.salary - s.costActive) : s.savingsAdv;
   return { ...s, adv:true, savingsEff, refCol: locCol(s.retireCountry, s.retireCity) };
 }
 function taxRate(d, p){
@@ -784,7 +789,7 @@ function simulate(p, d, lite){
   const x = p.renteRate / 100 - infl;                      // rente réelle
   const gA = p.returnRate / 100 - (p.realAccum ? infl : 0);
   const age = Math.round(+p.age);
-  const LE = Math.max(age + 1, Math.round(p.lifeCustom ? +p.lifeExp : d.le));
+  const LE = Math.max(age + 1, Math.round(p.lifeCustom ? +p.lifeExp : DEFAULT_LE));
   const H = p.consume ? LE + 10 : LE;                      // horizon d'épuisement ou de projection
   const spNet = p.noState ? 0 : Math.max(0, +p.statePension || 0);
   const spAge = Math.round(+p.statePensionAge || 64);
@@ -793,7 +798,9 @@ function simulate(p, d, lite){
   const margin = p.marginOn ? Math.max(0, +p.marginYears || 0) * net * 12 : 0;
   const topUp = p.reservesOn ? Math.max(0, (+p.reserveRentier || 0) - (+p.reserveActive || 0)) : 0;
   const base = (annual, R) => p.consume ? annual * annuity(x, H - R) : (x > 0 ? annual / x : (annual > 0 ? Infinity : 0));
-  const target = R => base(W, R) + margin + topUp;
+  // Si tu deviens rentier après l'âge de la pension, elle est déjà versée : l'objectif n'a plus à la remplacer.
+  const annualAt = R => 12 * (R >= spAge ? grossAfter : gross);
+  const target = R => base(annualAt(R), R) + margin + topUp;
   let C = Math.max(0, +p.capital || 0), n = 0;
   const S = Math.max(0, +p.savingsEff || 0) * 12;
   const capital = [C];
@@ -801,8 +808,8 @@ function simulate(p, d, lite){
   while (C < T && age + n < H - 1){ C = (C + S) * (1 + gA); n++; capital.push(C); T = target(age + n); }
   const reached = C >= T;
   const R = age + n;
-  const out = { net, gross, tax, W, grossAfter, T, base: base(W, R), margin, topUp, R, n, year: NOW_YEAR + n, reached, CR: C,
-    LE, H, x, gA, infl, spNet, spAge, consume: !!p.consume, tPension: base(12 * grossAfter, R) + margin + topUp };
+  const out = { net, gross, tax, W, grossAfter, T, base: base(annualAt(R), R), margin, topUp, R, n, year: NOW_YEAR + n, reached, CR: C,
+    LE, H, x, gA, infl, spNet, spAge, consume: !!p.consume, tPension: base(12 * grossAfter, R) };
   if (lite) return out;
   const ages = [];
   for (let a = age; a <= H; a++) ages.push(a);
@@ -907,19 +914,19 @@ const F = (() => {
 
 /* ---------- État ---------- */
 const $ = s => document.querySelector(s);
-const KEY = "calculateur-rentier-v2", THEME_KEY = "calculateur-rentier-theme";
+const KEY = "calculateur-rentier-v3", THEME_KEY = "calculateur-rentier-theme";
 const store = {
   get(k){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch(e){ return null; } },
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
 };
-const CATS = ["Logement","Alimentation","Transports","Santé","Loisirs & voyages","Autres"];
-const W_DEFAULT = [0.35, 0.18, 0.10, 0.06, 0.16, 0.15];
-// Valeurs d'exemple : celles de tes captures, pour comparer avec l'outil d'origine.
-const DEFAULTS = { mode:"simple", currency:"EUR", age:24, capital:100000, savings:1329, pension:3130,
-  salary:3400, costActive:2071, savingsAuto:true, savingsAdv:1329,
+const CATS = ["Logement","Santé","Alimentation","Restaurants","Véhicule","Essence","Assurance auto","Sorties","Week-ends","Vacances","Transports","Conjoint","Enfants","Divers"];
+const W_DEFAULT = [780,100,420,130,200,120,50,80,100,140,50,0,0,130].map(v => v / 2300); // budget « classe moyenne » France = 2 300 €
+// Réglages de départ identiques à l'outil d'origine
+const DEFAULTS = { mode:"simple", currency:"EUR", age:30, capital:51000, savings:500, pension:2300,
+  salary:2800, costActive:2300, savingsAuto:true, savingsAdv:500,
   activeCountry:"FR", activeCity:"", retireCountry:"FR", retireCity:"",
-  returnRate:8, renteRate:5.5, consume:false, inflationOn:false, inflation:2, realAccum:false,
-  lifeCustom:false, lifeExp:90, marginOn:false, marginYears:10, reservesOn:false, reserveActive:5000, reserveRentier:12000,
+  returnRate:12, renteRate:7, consume:false, inflationOn:false, inflation:2, realAccum:false,
+  lifeCustom:false, lifeExp:85, marginOn:false, marginYears:3, reservesOn:false, reserveActive:5000, reserveRentier:12000,
   noState:false, statePension:1800, statePensionAge:64,
   costW:W_DEFAULT.slice(), pensionW:W_DEFAULT.slice(), showCostDetail:false, showPensionDetail:false,
   taxOverrides:{}, extended:false, cityMode:false, sortKey:"name", sortDir:1, expanded:{}, selected:null };
@@ -930,15 +937,15 @@ function sanitize(){
   if (!state.expanded || typeof state.expanded !== "object") state.expanded = {};
   if (!FX[state.currency]) state.currency = "EUR";
   for (const k of ["retireCountry","activeCountry"]) if (!BY[state[k]]) state[k] = "FR";
-  for (const k of ["costW","pensionW"]) if (!Array.isArray(state[k]) || state[k].length !== 6) state[k] = W_DEFAULT.slice();
+  for (const k of ["costW","pensionW"]) if (!Array.isArray(state[k]) || state[k].length !== CATS.length) state[k] = W_DEFAULT.slice();
 }
 sanitize();
 
-const FR_COST = [1600, 2400, 4200, 8000];
-const FR_SALARY = [1500, 2300, 4000, 8000];
+const FR_COST = [1550, 2300, 5000, 10000];
+const FR_SALARY = [1900, 2800, 5800, 11000];
 const LV_COST = ["Classe populaire","Classe moyenne","Aisé","Riche"];
 const LV_SAL = ["Populaire","Moyenne","Aisé","Riche"];
-const bracket = v => v < 2000 ? "classe populaire" : v < 3300 ? "classe moyenne" : v < 6100 ? "aisé" : "riche";
+const bracket = v => v < 1925 ? "classe populaire" : v < 3650 ? "classe moyenne" : v < 7500 ? "aisé" : "riche";
 const CUR_SYM = { EUR:"€", CHF:"CHF", USD:"$", CAD:"$CA" };
 const ten = v => Math.round(v / 10) * 10;
 const activeCol = () => locCol(state.activeCountry, state.activeCity);
@@ -997,7 +1004,7 @@ const CHIPS = {
 };
 function displayVal(f){
   let v = +state[f.key];
-  if (f.key === "savingsAdv" && state.savingsAuto) v = Math.max(0, state.salary - state.costActive);
+  if (f.key === "savingsAdv" && state.savingsAuto) v = Math.max(MIN_SAVINGS, state.salary - state.costActive);
   if (f.kind === "money") return nf0.format(Math.round(v * FX[state.currency]));
   if (f.kind === "pct") return nf2.format(v);
   return String(Math.round(v));
@@ -1075,9 +1082,9 @@ function syncPanel(p){
   syncLoc("active"); syncLoc("retire");
   const diff = state.salary - state.costActive;
   const rate = state.salary > 0 ? p.savingsEff / state.salary : 0;
-  $("#sav-rate").innerHTML = state.savingsAuto && diff < 0 ? `<span class="neg">Tes dépenses dépassent ton salaire</span>` : `Taux d'épargne : <b>${Math.round(rate * 100)} %</b>`;
+  $("#sav-rate").innerHTML = state.savingsAuto && diff < MIN_SAVINGS ? `<span class="neg">Épargne minimale de ${money(MIN_SAVINGS)} retenue</span>` : `Taux d'épargne : <b>${Math.round(rate * 100)} %</b>`;
   $("#sav-mode").innerHTML = state.savingsAuto ? "auto : salaire − dépenses" : `<button type="button" data-act="savings-auto">manuel · repasser en auto</button>`;
-  const LE = state.lifeCustom ? Math.round(state.lifeExp) : destination(state.retireCountry, state.retireCity).le;
+  const LE = state.lifeCustom ? Math.round(state.lifeExp) : DEFAULT_LE;
   $("#risk-consume").innerHTML = `⚠ <b>Option risquée :</b> consommer ton capital, ce n'est plus vraiment vivre de tes rentes. Ton patrimoine fond avec le temps : si tu vis plus longtemps que prévu ou si les marchés baissent, tu t'exposes à un <b>risque de ruine</b> à un âge avancé. Le calcul vise un capital épuisé à ${LE + 10} ans (espérance de vie + 10 ans).`;
   $("#margin-note").textContent = `≈ ${money(state.marginYears * state.pension * 12)} de capital en plus (${plural(Math.round(state.marginYears), "an")} de dépenses). Tu pars un peu plus tard, mais ton capital continue de croître pendant la retraite.`;
   $("#btn-estimate").textContent = `Estimer ≈ 40 % de mon salaire → ${money(state.salary * 0.4)}/mois`;
@@ -1145,6 +1152,10 @@ function renderPension(p, d, res){
   const ico = `<span class="ico" aria-hidden="true">+</span>`;
   if (res.spNet <= 0){
     el.innerHTML = `${ico}<p><b>Et ta pension d'État ?</b> ${p.noState ? "Tu as choisi de ne pas compter dessus : ton capital doit financer seul toute ta retraite, c'est l'hypothèse la plus prudente." : "Aucune pension n'est prise en compte : ton capital doit couvrir seul toute ta retraite."}</p>`;
+    return;
+  }
+  if (res.reached && res.R >= res.spAge){
+    el.innerHTML = `${ico}<p><b>Et ta pension d'État ?</b> Tu deviens rentier après ${res.spAge} ans : ta pension de ${money(res.spNet)}/mois est déjà versée, l'objectif en tient donc compte et ton capital ne finance que le complément (${money(res.net - res.spNet > 0 ? res.net - res.spNet : 0)}/mois net).</p>`;
     return;
   }
   el.innerHTML = `${ico}<p><b>Et ta pension d'État ?</b> Le calcul vise une rente <b>100 % autonome</b>, sans compter sur l'État. À partir de ${res.spAge} ans, ta pension de ${money(res.spNet)}/mois s'ajoute à ta rente nette : tes revenus monteraient à <b class="pos">${money(res.net + res.spNet)}/mois</b>. En comptant sur ta pension dès le départ, l'objectif tomberait à ${money(res.tPension)}.</p>`;
@@ -1328,6 +1339,7 @@ function renderWorld(p, d, res, cRows){
   $("#world-desc").innerHTML = `Même épargne, même rendement, même niveau de vie (rentier ${lvl}) : seuls le coût de la vie et la fiscalité changent. La fiscalité est un <b>encadrement indicatif</b> (calcul à la borne basse) qui dépend de ta situation, de ta résidence fiscale, de ton visa et du type de revenus. Les pays à <b>fiscalité territoriale</b> 🌴 demandent souvent bien moins de capital.`;
   $("#btn-extended").setAttribute("aria-pressed", String(state.extended));
   $("#btn-cities").setAttribute("aria-pressed", String(state.cityMode));
+  $("#btn-cities").textContent = `Mode villes (${cityRows(p).length})`;
   const rows = state.cityMode ? cityRows(p) : cRows;
   const currentKey = d.city ? d.code + "|" + d.city : d.code;
   if (state.selected && !rows.some(r => r.key === state.selected)) state.selected = null;
