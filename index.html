@@ -1,0 +1,1476 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculateur Rentier : à quel âge vivre de ton capital ?</title>
+<meta name="description" content="Simulateur gratuit : calcule le capital à atteindre pour vivre de tes rentes, ton âge de rentier, et compare 74 pays et 150 villes selon le coût de la vie et la fiscalité.">
+<meta property="og:title" content="Calculateur Rentier">
+<meta property="og:description" content="À quel âge peux-tu vivre de ton capital ? Capital cible, rente nette, comparatif de 74 pays.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d2c4c'/%3E%3Ccircle cx='22' cy='11' r='5' fill='%23e08a2c'/%3E%3Cpath d='M5 25h22' stroke='%23f3f5fa' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* Layout : établi à deux colonnes — panneau de saisie collant à gauche, résultats empilés à droite */
+:root{
+  --bg:#edf0f5; --surface:#ffffff; --surface-2:#f5f7fa; --line:#dde2ea; --line-strong:#c6cdd9;
+  --ink:#17213a; --muted:#56617a; --faint:#7f899e;
+  --night:#1d2c4c; --night-ink:#f3f5fa; --night-muted:#b9c3d9; --hero-accent:#ffc47e;
+  --control:#1d2c4c;
+  --sun:#e08a2c; --sun-soft:#fcefdf; --sun-ink:#94520f; --on-sun:#ffffff;
+  --lagoon:#12846a; --lagoon-soft:#e2f2ec;
+  --warn:#c26d0c; --bad:#c03838;
+  --cap:#3a6ee8; --cap-fill:rgba(58,110,232,.13); --goal:#e08a2c; --retire:#1fa36a; --more:#8b5cf6; --grid:rgba(23,33,58,.07); --act:#b3bccb;
+  --q-best:#ddefe7; --q-bad:#fbebda; --q-mid:#eef1f6; --q-line:rgba(23,33,58,.16);
+  --flag-edge:rgba(0,0,0,.2);
+  --focus:#3a6ee8;
+  --shadow:0 1px 2px rgba(23,33,58,.05),0 6px 18px rgba(23,33,58,.05);
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Figtree","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --r:12px; --r-sm:9px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d131e; --surface:#151d2c; --surface-2:#1b2537; --line:#28334a; --line-strong:#38455f;
+    --ink:#e6eaf2; --muted:#a3adc1; --faint:#7d889f;
+    --night:#22365c; --night-ink:#f3f5fa; --night-muted:#c3cce1; --hero-accent:#ffc47e;
+    --control:#7a9ff7;
+    --sun:#f0a24e; --sun-soft:#30241a; --sun-ink:#f6c48d; --on-sun:#1b1207;
+    --lagoon:#45c7a0; --lagoon-soft:#142e28;
+    --warn:#f0a24e; --bad:#f07171;
+    --cap:#7a9ff7; --cap-fill:rgba(122,159,247,.16); --goal:#f0a24e; --retire:#45c7a0; --more:#ad91fb; --grid:rgba(230,234,242,.08); --act:#4b5770;
+    --q-best:#14302a; --q-bad:#33251a; --q-mid:#1a2335; --q-line:rgba(230,234,242,.16);
+    --flag-edge:rgba(255,255,255,.18);
+    --focus:#9ab6ff;
+    --shadow:0 1px 2px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d131e; --surface:#151d2c; --surface-2:#1b2537; --line:#28334a; --line-strong:#38455f;
+  --ink:#e6eaf2; --muted:#a3adc1; --faint:#7d889f;
+  --night:#22365c; --night-ink:#f3f5fa; --night-muted:#c3cce1; --hero-accent:#ffc47e;
+  --control:#7a9ff7;
+  --sun:#f0a24e; --sun-soft:#30241a; --sun-ink:#f6c48d; --on-sun:#1b1207;
+  --lagoon:#45c7a0; --lagoon-soft:#142e28;
+  --warn:#f0a24e; --bad:#f07171;
+  --cap:#7a9ff7; --cap-fill:rgba(122,159,247,.16); --goal:#f0a24e; --retire:#45c7a0; --more:#ad91fb; --grid:rgba(230,234,242,.08); --act:#4b5770;
+  --q-best:#14302a; --q-bad:#33251a; --q-mid:#1a2335; --q-line:rgba(230,234,242,.16);
+  --flag-edge:rgba(255,255,255,.18);
+  --focus:#9ab6ff;
+  --shadow:0 1px 2px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select{font-family:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.page{max-width:1520px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 84px}
+
+/* En-tête */
+.masthead{display:flex;justify-content:space-between;align-items:flex-start;gap:20px 32px;flex-wrap:wrap;margin-bottom:22px}
+.intro{max-width:700px;min-width:0}
+.eyebrow{margin:0 0 6px;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--sun-ink)}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,3.6vw,42px);line-height:1.05;letter-spacing:-.015em;margin:0 0 10px;text-wrap:balance}
+.lede{margin:0 0 10px;font-size:16px;max-width:62ch}
+.fine{margin:0;color:var(--faint);font-size:12.5px;line-height:1.55;max-width:90ch}
+.currency{display:inline-flex;gap:2px;padding:3px;background:var(--surface);border:1px solid var(--line);border-radius:999px}
+.currency button{border:0;background:transparent;color:var(--muted);font-weight:600;font-size:12.5px;letter-spacing:.04em;padding:8px 13px;border-radius:999px;cursor:pointer}
+.currency button[aria-pressed="true"]{background:var(--night);color:var(--night-ink)}
+
+/* Grille principale */
+.layout{display:grid;grid-template-columns:minmax(300px,410px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:1040px){.layout{grid-template-columns:minmax(0,1fr)}}
+.results{display:grid;gap:14px;min-width:0}
+
+/* Panneau de saisie */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 14px;box-shadow:var(--shadow);min-width:0}
+@media (min-width:1041px){.panel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);max-height:calc(100vh - 32px);overflow:auto}}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px}
+.tabs button{border:0;background:transparent;color:var(--muted);font-weight:600;font-size:14px;padding:9px;border-radius:7px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--night);color:var(--night-ink)}
+.panel h2{font-family:var(--f-display);font-weight:600;font-size:18px;margin:18px 0 4px}
+.panel h3{margin:18px 0 2px;font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:8px}
+.field label{display:inline-flex;align-items:center;gap:6px;font-size:14px;min-width:0}
+.num{display:inline-flex;align-items:center;gap:6px;flex:none}
+.num input,.sel{font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:8px;padding:7px 10px}
+.num input{width:120px;text-align:right}
+.num .unit{min-width:28px;font-size:13px;color:var(--faint)}
+.sel{font-size:14px;max-width:210px;width:100%}
+.tip{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--line-strong);color:var(--faint);font-size:10.5px;font-weight:700;font-style:normal;cursor:help;flex:none}
+.range{position:relative;padding-top:2px}
+.range input{width:100%;margin:0;accent-color:var(--control);cursor:pointer}
+.ticks{position:relative;height:6px;margin:0 8px}
+.ticks i{position:absolute;top:0;width:1px;height:6px;background:var(--line-strong)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
+.chip{border:1px solid var(--line-strong);background:var(--surface);color:var(--muted);font-weight:500;font-size:12.5px;padding:5px 11px;border-radius:999px;cursor:pointer}
+.chip:hover{border-color:var(--muted)}
+.chip[aria-pressed="true"]{border-color:var(--control);color:var(--ink);background:var(--surface-2);font-weight:600}
+.help{margin:0 0 4px;font-size:12px;color:var(--faint)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:3px;margin-block:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px}
+.seg button{border:0;background:transparent;color:var(--muted);font-weight:600;font-size:13px;padding:7px 6px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line-strong)}
+.check{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding-block:4px;cursor:pointer}
+.check input{accent-color:var(--control);width:16px;height:16px}
+.linkbtn{border:0;background:none;color:var(--cap);font-weight:600;font-size:13px;padding:4px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.hyp{margin:14px 0 0;padding:10px 12px;background:var(--surface-2);border-radius:8px;font-size:12.5px;color:var(--muted);line-height:1.55}
+.hyp b{color:var(--ink);font-weight:600}
+.panel-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--faint)}
+.panel-foot button{border:1px solid var(--line-strong);background:var(--surface);color:var(--muted);font-weight:600;font-size:12px;padding:5px 10px;border-radius:7px;cursor:pointer}
+.panel-foot button.confirm{border-color:var(--bad);color:var(--bad)}
+
+/* Carte héros */
+.hero{position:relative;overflow:hidden;background:var(--night);color:var(--night-ink);border-radius:var(--r);padding:24px clamp(18px,2.4vw,30px) 22px}
+.hero::after{content:"";position:absolute;right:-90px;top:-110px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,var(--hero-accent) 0%,transparent 66%);opacity:.18;pointer-events:none}
+.hero-kicker{margin:0;font-size:16px;color:var(--night-muted)}
+.hero-age{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 16px;margin:2px 0 14px}
+.hero-age .big{font-family:var(--f-display);font-weight:800;font-size:clamp(52px,6.2vw,80px);line-height:1;letter-spacing:-.025em}
+.hero-age .big.txt{font-size:clamp(34px,4vw,48px)}
+.hero-age .when{font-size:17px}
+.hero ul{list-style:none;margin:0;padding:0;display:grid;gap:7px;max-width:96ch;position:relative;z-index:1}
+.hero li{font-size:15px;line-height:1.5}
+.hero li.lead{font-size:16px}
+.hero li.small{font-size:12.5px;color:var(--night-muted)}
+.hero b{font-weight:700}
+.hero .hl{color:var(--hero-accent);font-weight:700}
+
+/* Encadrés */
+.callout{display:flex;gap:12px;align-items:flex-start;padding:13px 16px;background:var(--sun-soft);border-radius:var(--r);font-size:14px;line-height:1.55}
+.callout p{margin:0}
+.ico{flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;font-weight:800;font-size:13px}
+.callout .ico{background:var(--sun);color:var(--on-sun)}
+.callout a{color:var(--sun-ink);font-weight:600}
+.pension{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;background:var(--lagoon-soft);border-radius:var(--r);font-size:14px;line-height:1.6}
+.pension .ico{background:var(--lagoon);color:var(--surface)}
+.pension p{margin:0}
+.pension b.pos{color:var(--lagoon)}
+
+/* Indicateurs */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;min-width:0}
+.kpi .k{font-size:12px;color:var(--muted)}
+.kpi .v{margin-top:2px;font-weight:700;font-size:21px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi .v.pos{color:var(--lagoon)}
+.kpi .s{margin-top:1px;font-size:12px;color:var(--faint)}
+
+/* Cartes */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px clamp(14px,1.8vw,22px);box-shadow:var(--shadow);min-width:0}
+.card h3{font-family:var(--f-display);font-weight:600;font-size:20px;margin:0 0 4px;letter-spacing:-.005em}
+.card .desc{margin:0 0 12px;font-size:13.5px;color:var(--muted);max-width:120ch}
+.card .desc b{color:var(--ink);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 8px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{display:inline-block;width:22px;border-top:2.5px solid currentColor}
+.legend i.dash{border-top-style:dashed}
+.legend i.dot{width:10px;height:10px;border:0;border-radius:50%;background:currentColor}
+.chart-box{position:relative;height:clamp(280px,36vw,420px)}
+.chart-fallback{display:grid;place-items:center;height:100%;color:var(--faint);font-size:13px;text-align:center}
+
+/* Section monde */
+.world-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px 16px;flex-wrap:wrap}
+.btn-ghost{border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-weight:600;font-size:12.5px;padding:7px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.btn-ghost:hover{border-color:var(--muted)}
+.btn-ghost[aria-pressed="true"]{background:var(--night);border-color:var(--night);color:var(--night-ink)}
+.sub-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.sub-head h4{margin:0;font-size:15px;font-weight:700}
+.sub-head .btns{display:flex;gap:6px;flex-wrap:wrap}
+.axis-note{margin:6px 0 0;font-size:12px;color:var(--faint)}
+.qmap{display:grid;grid-template-columns:34px minmax(0,1fr);gap:6px;margin-top:10px}
+.qaxis-y{display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding-block:30px 40px;font-size:10.5px;line-height:1.2;color:var(--faint);text-align:center}
+.qaxis-y .rot{writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.04em}
+.qcorners{display:flex;justify-content:space-between;gap:12px;font-size:10.5px;line-height:1.3;color:var(--faint)}
+.qcorners span:last-child{text-align:right}
+.qcorners .good{color:var(--lagoon);font-weight:600}
+.qcorners .bad{color:var(--warn);font-weight:600}
+.plot{position:relative;height:clamp(300px,32vw,410px);margin-block:5px;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
+.quad{position:absolute;width:50%;height:50%}
+.q-tl{left:0;top:0;background:var(--q-mid)}
+.q-tr{right:0;top:0;background:var(--q-best)}
+.q-bl{left:0;bottom:0;background:var(--q-bad)}
+.q-br{right:0;bottom:0;background:var(--q-mid)}
+.plot .mid-v{position:absolute;left:50%;top:0;bottom:0;border-left:1px solid var(--q-line)}
+.plot .mid-h{position:absolute;top:50%;left:0;right:0;border-top:1px solid var(--q-line)}
+.ylab{position:absolute;left:7px;transform:translateY(-50%);font-size:10.5px;color:var(--faint);font-variant-numeric:tabular-nums;pointer-events:none}
+.pt{position:absolute;transform:translate(-50%,-50%);border:0;background:transparent;padding:3px;border-radius:5px;line-height:0;cursor:pointer;transition:transform .12s ease}
+.pt .flag{width:24px;height:16px}
+.pt:hover,.pt:focus-visible{z-index:4;transform:translate(-50%,-50%) scale(1.3)}
+.pt.is-current{z-index:3;background:var(--surface);box-shadow:0 0 0 2px var(--control)}
+.pt.is-selected{z-index:3;box-shadow:0 0 0 2px var(--sun)}
+.city-mode .pt .flag{width:15px;height:10px}
+.city-mode .pt{opacity:.9}
+.qaxis-x{display:flex;justify-content:space-between;font-size:10.5px;color:var(--faint)}
+.notes-key{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:12px;font-size:12px;color:var(--muted)}
+.notes-key span{display:inline-flex;align-items:center;gap:5px}
+.notes-key i{display:inline-block;width:9px;height:9px;border-radius:2px}
+
+/* Fiche détail */
+.detail{margin-top:12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2)}
+.detail-head{display:flex;align-items:center;gap:10px}
+.detail-head h4{margin:0;font-size:16px;font-weight:700}
+.detail-head .muted{color:var(--faint);font-size:13px}
+.detail-head .x{margin-left:auto;border:0;background:none;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px}
+.detail dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px 16px;margin:12px 0 10px}
+.detail dt{font-size:11.5px;color:var(--faint)}
+.detail dd{margin:1px 0 0;font-weight:700;font-variant-numeric:tabular-nums}
+.detail p{margin:0 0 10px;font-size:13px;color:var(--muted)}
+.btn-primary{border:0;background:var(--night);color:var(--night-ink);font-weight:600;font-size:13px;padding:8px 14px;border-radius:8px;cursor:pointer}
+
+/* Tableau */
+.tbl-wrap{overflow-x:auto;margin-top:12px;border:1px solid var(--line);border-radius:var(--r-sm)}
+table{width:100%;min-width:860px;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+thead th{padding:0;background:var(--surface-2);border-bottom:1px solid var(--line);text-align:right;font-weight:600;white-space:nowrap}
+thead th:first-child{text-align:left}
+.sort{width:100%;border:0;background:none;color:var(--ink);font:inherit;font-weight:600;text-align:inherit;padding:10px 9px;cursor:pointer;white-space:nowrap}
+.sort .arr{color:var(--faint);font-size:11px;margin-left:3px}
+.sort[aria-sort] .arr{color:var(--ink)}
+td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+td:first-child{text-align:left}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--surface-2)}
+tr.is-current td{background:var(--surface-2)}
+tr.is-current td:first-child{box-shadow:inset 3px 0 0 var(--control)}
+.cname{display:inline-flex;align-items:center;gap:8px}
+.cname .nm{font-weight:600}
+.cname .sub{font-size:11.5px;color:var(--faint)}
+.badge{font-size:11px;font-weight:700;color:var(--control)}
+.exp{width:18px;height:18px;border:0;background:none;color:var(--faint);cursor:pointer;padding:0;font-size:10px;transition:transform .15s}
+.exp[aria-expanded="true"]{transform:rotate(90deg)}
+.exp-sp{display:inline-block;width:18px}
+tr.city td{font-size:12.5px;color:var(--muted)}
+tr.city td:first-child{padding-left:42px}
+.age b{font-weight:700;color:var(--ink)}
+.age .d{color:var(--faint);font-size:12px;margin-left:2px}
+.c-net{color:var(--lagoon);font-weight:600}
+.c-gross{font-weight:600}
+.c-gross.taxed{color:var(--warn)}
+.c-gross.free{color:var(--lagoon)}
+.s-good{color:var(--lagoon)}
+.s-mid{color:var(--warn)}
+.s-bad{color:var(--bad)}
+.palm{font-size:12px;margin-left:3px}
+.taxcell{cursor:help;border-bottom:1px dotted var(--line-strong)}
+.more-row{display:flex;justify-content:center;margin-top:10px}
+.foot{margin:14px 0 0;font-size:12px;color:var(--faint);line-height:1.55}
+
+/* Drapeaux */
+.flag{display:inline-block;flex:none;width:20px;height:14px;border-radius:2px;box-shadow:0 0 0 .5px var(--flag-edge);overflow:hidden;vertical-align:-2px}
+
+/* Bascule thème */
+.theme-toggle{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);color:var(--muted);font-weight:600;font-size:12.5px;cursor:pointer}
+.theme-toggle .sw{position:relative;width:32px;height:18px;border-radius:999px;background:var(--line-strong);transition:background .2s}
+.theme-toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--surface);transition:transform .2s}
+.theme-toggle[aria-pressed="true"] .sw{background:var(--cap)}
+.theme-toggle[aria-pressed="true"] .sw::after{transform:translateX(14px)}
+
+/* Info-bulle */
+.tt{position:fixed;z-index:70;max-width:290px;padding:8px 10px;background:var(--ink);color:var(--surface);border-radius:8px;font-size:12.5px;line-height:1.45;white-space:pre-line;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+
+/* Fenêtre taux */
+.modal{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(9,14,24,.5)}
+.dialog{display:flex;flex-direction:column;width:100%;max-width:640px;max-height:min(82vh,760px);background:var(--surface);color:var(--ink);border-radius:var(--r);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.dialog header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:16px 18px 10px;border-bottom:1px solid var(--line)}
+.dialog h3{margin:0;font-family:var(--f-display);font-weight:600;font-size:19px}
+.dialog header p{margin:4px 0 0;font-size:12.5px;color:var(--muted)}
+.dialog .body{overflow:auto;padding:4px 18px}
+.dialog table{min-width:0;font-size:13px}
+.dialog td{padding:6px 8px}
+.dialog td input{width:84px;text-align:right;font-weight:600;font-size:13px;padding:5px 8px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);color:var(--ink)}
+.dialog footer{display:flex;justify-content:space-between;gap:10px;padding:12px 18px;border-top:1px solid var(--line)}
+
+
+/* Mode avancé */
+.phase{display:flex;align-items:center;gap:10px;margin:26px 0 4px;padding-top:18px;border-top:1px solid var(--line);font-size:19px!important}
+.phase .dot{flex:none;width:12px;height:12px;border-radius:4px}
+.phase.active .dot{background:var(--lagoon)}
+.phase.rentier .dot{background:var(--sun)}
+.stack{padding-block:8px}
+.stack > label{display:flex;align-items:center;gap:6px;font-size:14px}
+.selbox{position:relative;display:flex;align-items:center;margin-top:7px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface)}
+.selbox .lead{position:absolute;left:11px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none}
+.selbox .lead.pin{color:var(--bad)}
+.selbox select{width:100%;border:0;border-radius:8px;background:transparent;color:var(--ink);font-size:14px;font-weight:500;padding:10px 10px 10px 40px;cursor:pointer}
+.subline{display:flex;justify-content:space-between;gap:10px;margin:-4px 0 2px;font-size:11.5px;color:var(--faint)}
+.subline b{color:var(--lagoon)}
+.subline .neg{color:var(--bad);font-weight:600}
+.subline button{border:0;background:none;color:var(--cap);font-size:11.5px;font-weight:600;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.editlink{display:inline-flex;align-items:center;gap:6px;margin-top:2px;border:0;background:none;color:var(--sun-ink);font-size:12.5px;font-weight:600;padding:2px 0;cursor:pointer}
+.editlink[aria-expanded="true"]{color:var(--ink)}
+.dgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin:8px 0 4px;padding:10px 12px;background:var(--surface-2);border-radius:8px}
+.dgrid label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--muted)}
+.dgrid input{width:100%;text-align:right;font-weight:600;font-size:13.5px;padding:6px 8px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);color:var(--ink);font-variant-numeric:tabular-nums}
+.dgrid .tot{grid-column:1/-1;display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.dgrid .tot b{color:var(--ink)}
+.opt{padding-block:12px 10px;border-top:1px solid var(--line)}
+.opt:first-of-type{margin-top:10px}
+.opt-head{display:flex;align-items:flex-start;gap:8px}
+.opt-head .tip{margin-top:2px}
+.opt .check{font-size:14px;color:var(--ink);align-items:flex-start}
+.opt .check input{margin-top:2px;flex:none}
+.opt .check b{font-weight:700}
+.opt .check.small{font-size:12.5px;color:var(--muted)}
+.opt .sub{padding-left:26px;margin-top:4px}
+.risk{margin:6px 0 0 24px;font-size:12px;line-height:1.5;color:var(--bad)}
+.risk b{font-weight:700}
+.caution{margin:6px 0 4px 24px;font-size:12px;line-height:1.5;color:var(--warn)}
+.hint{margin:0 0 2px;font-size:11.5px;line-height:1.45;color:var(--faint)}
+.linkbtn.small{font-size:12px;padding:0 0 4px;text-decoration:none}
+.buoy{display:inline-block;flex:none;width:12px;height:12px;border-radius:50%;border:3px solid var(--bad)}
+.legend i.sq{width:12px;height:12px;border:0;border-radius:3px;background:currentColor}
+.legend i.tri{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid currentColor;border-top:0}
+
+@media (max-width:560px){
+  .num input{width:104px}
+  .hero li{font-size:14px}
+  .qmap{grid-template-columns:22px minmax(0,1fr)}
+  .qaxis-y span:not(.rot){display:none}
+  .pt .flag{width:19px;height:13px}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="page">
+  <header class="masthead">
+    <div class="intro">
+      <p class="eyebrow">Indépendance financière</p>
+      <h1>Calculateur Rentier</h1>
+      <p class="lede">À quel âge ton capital peut-il te verser une rente suffisante pour vivre ? Le simulateur calcule l'objectif à atteindre, ta rente brute et nette, et ce que ça change de vivre ta retraite ailleurs.</p>
+      <p class="fine">Outil pédagogique. Coût de la vie, fiscalité et notes par pays sont indicatifs et peuvent évoluer. La fiscalité est donnée en fourchette (les calculs prennent la borne basse par défaut) : elle dépend de ta résidence fiscale, parfois d'un visa, de tes enveloppes et du type de revenus. Tes paramètres restent dans ton navigateur, rien n'est envoyé.</p>
+    </div>
+    <div class="currency" role="group" aria-label="Devise d'affichage" id="currency">
+      <button type="button" data-cur="EUR">EUR</button>
+      <button type="button" data-cur="CHF">CHF</button>
+      <button type="button" data-cur="USD">USD</button>
+      <button type="button" data-cur="CAD">CAD</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="panel" id="panel" aria-label="Tes paramètres">
+      <div class="tabs" role="tablist" aria-label="Mode de calcul">
+        <button type="button" role="tab" id="tab-simple" data-mode="simple">Simplifié</button>
+        <button type="button" role="tab" id="tab-adv" data-mode="advanced">Avancé</button>
+      </div>
+
+      <!-- ===== Mode simplifié ===== -->
+      <div id="pane-simple">
+        <h2>Estimer ta retraite anticipée</h2>
+        <div class="field">
+          <label for="in-age">Ton âge aujourd'hui <i class="tip" tabindex="0" data-tip="Point de départ de la simulation. L'objectif est testé année après année à partir de cet âge.">i</i></label>
+          <span class="num"><input id="in-age" type="text" inputmode="numeric" autocomplete="off"><span class="unit">ans</span></span>
+        </div>
+        <div class="range"><input id="rg-age" type="range" min="18" max="70" step="1" aria-label="Âge"><div class="ticks" id="ticks-age"></div></div>
+        <div class="chips" id="chips-age"></div>
+
+        <div class="field">
+          <label for="in-capital">Capital déjà investi <i class="tip" tabindex="0" data-tip="Ce que tu as déjà placé (PEA, assurance-vie, CTO, crypto…). Il capitalise au rendement choisi.">i</i></label>
+          <span class="num"><input id="in-capital" type="text" inputmode="numeric" autocomplete="off"><span class="unit cur-sym">€</span></span>
+        </div>
+        <div class="field">
+          <label for="in-savings">Ta capacité d'épargne / mois <i class="tip" tabindex="0" data-tip="Montant investi chaque mois jusqu'à l'objectif. Le calcul le verse en début d'année (12 × ce montant).">i</i></label>
+          <span class="num"><input id="in-savings" type="text" inputmode="numeric" autocomplete="off"><span class="unit cur-sym">€</span></span>
+        </div>
+        <div class="field">
+          <label for="in-pension">Ta pension idéale / mois <i class="tip" tabindex="0" data-tip="Le revenu net mensuel dont tu as besoin pour vivre ta retraite en France.">i</i></label>
+          <span class="num"><input id="in-pension" type="text" inputmode="numeric" autocomplete="off"><span class="unit cur-sym">€</span></span>
+        </div>
+        <div class="range"><input id="rg-pension" type="range" min="500" max="15000" step="10" aria-label="Pension idéale"><div class="ticks" id="ticks-pension"></div></div>
+        <div class="chips" id="chips-pension"></div>
+        <p class="hyp" id="hyp"></p>
+      </div>
+
+      <!-- ===== Mode avancé ===== -->
+      <div id="pane-adv" hidden>
+        <h2>Ta situation aujourd'hui</h2>
+        <div class="field">
+          <label for="a-age">Âge actuel <i class="tip" tabindex="0" data-tip="Point de départ de la simulation.">i</i></label>
+          <span class="num"><input id="a-age" type="text" inputmode="numeric" autocomplete="off"><span class="unit">ans</span></span>
+        </div>
+        <div class="range"><input id="ra-age" type="range" min="18" max="70" step="1" aria-label="Âge actuel"><div class="ticks" id="tka-age"></div></div>
+        <div class="chips" id="cha-age"></div>
+
+        <div class="field">
+          <label for="a-salary">Salaire net / mois <i class="tip" tabindex="0" data-tip="Ton revenu net mensuel d'activité. Ta capacité d'épargne se calcule automatiquement : salaire − coût de la vie.">i</i></label>
+          <span class="num"><input id="a-salary" type="text" inputmode="numeric" autocomplete="off"><span class="unit cur-sym">€</span></span>
+        </div>
+        <div class="range"><input id="ra-salary" type="range" min="500" max="15000" step="10" aria-label="Salaire net"><div class="ticks" id="tka-salary"></div></div>
+        <div class="chips" id="cha-salary"></div>
+
+        <div class="field">
+          <label for="a-savings">Capacité d'épargne / mois <i class="tip" tabindex="0" data-tip="Calculée automatiquement (salaire − coût de la vie). Tu peux la saisir à la main : elle passe alors en mode manuel.">i</i></label>
+          <span class="num"><input id="a-savings" type="text" inputmode="numeric" autocomplete="off"><span class="unit cur-sym">€</span></span>
+        </div>
+        <div class="subline"><span id="sav-rate"></span><span id="sav-mode"></span></div>
+
+        <div class="field">
+          <label for="a-capital">Capital déjà investi <i class="tip" tabindex="0" data-tip="Ce que tu as déjà placé et qui capitalise pendant la phase active.">i</i></label>
+          <span class="num"><input id="a-capital" type="text" inputmode="numeric" autocomplete="off"><span class="unit cur-sym">€</span></span>
+        </div>
+
+        <h2 class="phase active"><span class="dot" aria-hidden="true"></span>Phase active (accumulation)</h2>
+        <div class="field">
+          <label for="a-growth">Croissance des investissements (%/an) <i class="tip" tabindex="0" data-tip="Rendement annuel moyen pendant que tu épargnes. Repère : 7 à 8 %/an sur longue période pour les actions mondiales, avant inflation.">i</i></label>
+          <span class="num"><input id="a-growth" type="text" inputmode="decimal" autocomplete="off"><span class="unit">%</span></span>
+        </div>
+        <div class="range"><input id="ra-growth" type="range" min="0" max="25" step="0.5" aria-label="Croissance des investissements"><div class="ticks" id="tka-growth"></div></div>
+        <div class="chips" id="cha-growth"></div>
+
+        <div class="stack">
+          <label for="a-active-country">Pays d'activité <i class="tip" tabindex="0" data-tip="Là où tu vis et travailles aujourd'hui. Sert d'échelle aux repères de salaire et de coût de la vie.">i</i></label>
+          <div class="selbox"><span class="lead" id="lead-active-country"></span><select id="a-active-country"></select></div>
+        </div>
+        <div class="stack" id="box-active-city">
+          <label for="a-active-city">Ville d'activité <i class="tip" tabindex="0" data-tip="Changer de ville ajuste ton coût de la vie au niveau local, à train de vie égal.">i</i></label>
+          <div class="selbox"><span class="lead pin" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2z" fill="currentColor"/></svg></span><select id="a-active-city"></select></div>
+        </div>
+
+        <div class="field">
+          <label for="a-cost">Ton coût de la vie / mois <i class="tip" tabindex="0" data-tip="Tes dépenses mensuelles actuelles. Les repères (classe populaire, moyenne…) s'adaptent au lieu choisi.">i</i></label>
+          <span class="num"><input id="a-cost" type="text" inputmode="numeric" autocomplete="off"><span class="unit cur-sym">€</span></span>
+        </div>
+        <div class="range"><input id="ra-cost" type="range" min="300" max="12000" step="10" aria-label="Coût de la vie"><div class="ticks" id="tka-cost"></div></div>
+        <div class="chips" id="cha-cost"></div>
+        <button type="button" class="editlink" id="toggle-cost" data-act="toggle-detail" data-which="cost" aria-expanded="false" aria-controls="detail-cost">✎ Éditer le détail des dépenses</button>
+        <div class="dgrid" id="detail-cost" hidden></div>
+
+        <h2 class="phase rentier"><span class="dot" aria-hidden="true"></span>Phase de rentier</h2>
+        <div class="stack">
+          <label for="a-retire-country">Où veux-tu vivre à la retraite ? <i class="tip" tabindex="0" data-tip="Changer de destination ajuste ta pension idéale pour garder le même train de vie sur place.">i</i></label>
+          <div class="selbox"><span class="lead" id="lead-retire-country"></span><select id="a-retire-country" aria-label="Pays de retraite"></select></div>
+          <div class="selbox" id="box-retire-city"><span class="lead pin" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2z" fill="currentColor"/></svg></span><select id="a-retire-city" aria-label="Ville de retraite"></select></div>
+        </div>
+
+        <div class="field">
+          <label for="a-pension">Ta pension idéale / mois <i class="tip" tabindex="0" data-tip="Le revenu net mensuel dont tu as besoin pour vivre sur ton lieu de retraite.">i</i></label>
+          <span class="num"><input id="a-pension" type="text" inputmode="numeric" autocomplete="off"><span class="unit cur-sym">€</span></span>
+        </div>
+        <div class="range"><input id="ra-pension" type="range" min="500" max="15000" step="10" aria-label="Pension idéale"><div class="ticks" id="tka-pension"></div></div>
+        <div class="chips" id="cha-pension"></div>
+        <button type="button" class="editlink" id="toggle-pension" data-act="toggle-detail" data-which="pension" aria-expanded="false" aria-controls="detail-pension">✎ Éditer le détail des dépenses</button>
+        <div class="dgrid" id="detail-pension" hidden></div>
+
+        <div class="field">
+          <label for="a-rente">Taux de rente (% du capital à la retraite) <i class="tip" tabindex="0" data-tip="Part du capital que tu retires chaque année une fois rentier. Capital cible = rente brute annuelle ÷ ce taux. Plus il est bas, plus le plan est prudent.">i</i></label>
+          <span class="num"><input id="a-rente" type="text" inputmode="decimal" autocomplete="off"><span class="unit">%</span></span>
+        </div>
+        <div class="range"><input id="ra-rente" type="range" min="1" max="10" step="0.05" aria-label="Taux de rente"><div class="ticks" id="tka-rente"></div></div>
+        <div class="chips" id="cha-rente"></div>
+
+        <div class="opt">
+          <div class="opt-head"><label class="check"><input type="checkbox" id="chk-consume" data-bool="consume"><span>Accepter de <b>consommer le capital</b> pour partir plus tôt</span></label><i class="tip" tabindex="0" data-tip="Au lieu de vivre des seuls revenus du capital, tu le consommes progressivement jusqu'à ton espérance de vie + 10 ans. L'objectif baisse, tu pars plus tôt.">i</i></div>
+          <p class="risk" id="risk-consume" data-show="consume"></p>
+        </div>
+
+        <div class="opt">
+          <div class="opt-head"><label class="check"><input type="checkbox" id="chk-infl" data-bool="inflationOn"><span>Prendre en compte l'<b>inflation</b> sur les dépenses</span></label><i class="tip" tabindex="0" data-tip="Tes dépenses augmentent chaque année. Le calcul déduit l'inflation du taux de rente : tous les montants restent en euros d'aujourd'hui.">i</i></div>
+          <div class="sub" data-show="inflationOn">
+            <div class="field">
+              <label for="a-infl">Inflation (%)</label>
+              <span class="num"><input id="a-infl" type="text" inputmode="decimal" autocomplete="off"><span class="unit">%</span></span>
+            </div>
+            <div class="range"><input id="ra-infl" type="range" min="0" max="10" step="0.1" aria-label="Inflation"><div class="ticks" id="tka-infl"></div></div>
+            <div class="chips" id="cha-infl"></div>
+            <div class="opt-head"><label class="check small"><input type="checkbox" id="chk-real" data-bool="realAccum"><span>Déduire aussi l'inflation du rendement de la phase active</span></label><i class="tip" tabindex="0" data-tip="Option ajoutée. Sans elle, comme dans l'outil d'origine, la croissance de la phase active reste nominale alors que l'objectif est en euros d'aujourd'hui : l'âge obtenu est alors un peu optimiste.">i</i></div>
+          </div>
+        </div>
+
+        <div class="opt">
+          <div class="opt-head"><label class="check"><input type="checkbox" id="chk-le" data-bool="lifeCustom"><span>Personnaliser l'<b>espérance de vie</b></span></label><i class="tip" tabindex="0" data-tip="Par défaut, l'espérance de vie du pays de retraite. Une valeur plus haute rend le plan plus prudent si tu consommes ton capital.">i</i></div>
+          <div class="sub" data-show="lifeCustom">
+            <div class="field">
+              <label for="a-le">Espérance de vie (ans)</label>
+              <span class="num"><input id="a-le" type="text" inputmode="numeric" autocomplete="off"><span class="unit">ans</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="opt">
+          <div class="opt-head"><label class="check"><input type="checkbox" id="chk-margin" data-bool="marginOn"><span>Partir avec une <b>marge de sécurité</b> (années de dépenses en plus)</span></label><i class="tip" tabindex="0" data-tip="Ajoute à l'objectif un nombre d'années de dépenses nettes. Ce surplus n'est pas retiré : il amortit les mauvaises années de marché.">i</i></div>
+          <div class="sub" data-show="marginOn">
+            <div class="field">
+              <label for="a-margin">Marge (années de dépenses)</label>
+              <span class="num"><input id="a-margin" type="text" inputmode="numeric" autocomplete="off"><span class="unit">ans</span></span>
+            </div>
+            <p class="hint" id="margin-note"></p>
+          </div>
+        </div>
+
+        <div class="opt">
+          <div class="opt-head"><label class="check"><input type="checkbox" id="chk-res" data-bool="reservesOn"><span>Prévoir des <b>réserves de secours</b> (cash hors investissement)</span></label><i class="tip" tabindex="0" data-tip="Épargne de précaution en cash. Celle de la phase active est déjà constituée ; à la retraite, le complément pour atteindre la réserve de rentier est ajouté à l'objectif puis sorti du portefeuille.">i</i></div>
+          <div class="sub" data-show="reservesOn">
+            <div class="field">
+              <label for="a-resA"><span class="buoy" aria-hidden="true"></span>Réserve de la phase active</label>
+              <span class="num"><input id="a-resA" type="text" inputmode="numeric" autocomplete="off"><span class="unit cur-sym">€</span></span>
+            </div>
+            <div class="field">
+              <label for="a-resR"><span class="buoy" aria-hidden="true"></span>Réserve de la phase de rentier</label>
+              <span class="num"><input id="a-resR" type="text" inputmode="numeric" autocomplete="off"><span class="unit cur-sym">€</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="opt">
+          <div class="opt-head"><label class="check"><input type="checkbox" id="chk-nostate" data-bool="noState"><span>Ne pas compter sur l'<b>État</b> (ignorer la pension de retraite)</span></label><i class="tip" tabindex="0" data-tip="La pension n'entre jamais dans l'objectif (rente 100 % autonome). Elle sert à réduire tes retraits à partir de l'âge de versement, ce qui fait recroître le capital.">i</i></div>
+          <p class="caution">⚠ La pension d'État repose sur la répartition : elle dépend de la démographie (de moins en moins d'actifs par retraité) et des réformes à venir. Vois-la comme un complément plutôt que comme une garantie, d'où l'intérêt de bâtir ta propre rente.</p>
+          <div class="sub" data-hide="noState">
+            <div class="field">
+              <label for="a-sp">Pension d'État / mois <i class="tip" tabindex="0" data-tip="Montant net mensuel estimé, en euros d'aujourd'hui.">i</i></label>
+              <span class="num"><input id="a-sp" type="text" inputmode="numeric" autocomplete="off"><span class="unit cur-sym">€</span></span>
+            </div>
+            <button type="button" class="linkbtn small" id="btn-estimate" data-act="estimate-pension"></button>
+            <div class="field">
+              <label for="a-spage">Âge de la pension</label>
+              <span class="num"><input id="a-spage" type="text" inputmode="numeric" autocomplete="off"><span class="unit">ans</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-foot">
+        <span>Paramètres enregistrés sur cet appareil</span>
+        <button type="button" id="btn-reset">Réinitialiser</button>
+      </div>
+    </aside>
+
+    <main class="results">
+      <section class="hero" id="hero" aria-live="polite"></section>
+      <div class="callout" id="elsewhere"></div>
+      <div class="kpis" id="kpis"></div>
+
+      <section class="card" id="chart-card" aria-labelledby="chart-title">
+        <h3 id="chart-title">Évolution de ton capital</h3>
+        <p class="desc">Accumulation jusqu'à l'objectif (ligne pointillée), puis <b>phase rentier</b> : le capital reste <b>stable</b> si tu vis de la rente, <b>baisse</b> si tu le consommes, et peut <b>repartir à la hausse</b> quand la pension d'État complète tes revenus.</p>
+        <div class="legend" id="legend">
+          <span style="color:var(--cap)"><i></i><em style="font-style:normal;color:var(--muted)">Ton capital</em></span>
+          <span style="color:var(--goal)"><i class="dash"></i><em style="font-style:normal;color:var(--muted)">Objectif de capital</em></span>
+          <span style="color:var(--retire)"><i class="dot"></i><em style="font-style:normal;color:var(--muted)">Retraite anticipée</em></span>
+          <span style="color:var(--more)"><i class="dash"></i><em style="font-style:normal;color:var(--muted)">Si tu continues d'investir</em></span>
+          <span id="lg-exhaust" style="color:var(--bad)" hidden><i class="tri"></i><em style="font-style:normal;color:var(--muted)">Capital épuisé</em></span>
+        </div>
+        <div class="chart-box"><canvas id="chart" role="img" aria-label="Évolution du capital selon l'âge"></canvas></div>
+      </section>
+
+      <section class="card" id="income-card" aria-labelledby="income-title" hidden>
+        <h3 id="income-title">Évolution des revenus, rentes et dépenses</h3>
+        <p class="desc">Tes revenus mensuels (revenus d'activité tant que tu travailles, puis rente de ton capital et pension d'État) face à tes dépenses. Dès que <b>rente et pension dépassent tes dépenses</b>, le surplus fait <b>recroître ton capital</b>.</p>
+        <div class="legend">
+          <span style="color:var(--bad)"><i></i><em style="font-style:normal;color:var(--muted)">Dépenses</em></span>
+          <span style="color:var(--act)"><i class="sq"></i><em style="font-style:normal;color:var(--muted)">Revenus d'activité</em></span>
+          <span style="color:var(--cap)"><i class="sq"></i><em style="font-style:normal;color:var(--muted)">Rente du capital (nette)</em></span>
+          <span style="color:var(--retire)"><i class="sq"></i><em style="font-style:normal;color:var(--muted)">Pension d'État</em></span>
+        </div>
+        <div class="chart-box"><canvas id="chart-income" role="img" aria-label="Revenus mensuels et dépenses selon l'âge"></canvas></div>
+      </section>
+
+      <div class="pension" id="pension"></div>
+
+      <section class="card" id="world" aria-labelledby="world-title">
+        <div class="world-head">
+          <h3 id="world-title">Où partir pour devenir rentier plus tôt ?</h3>
+          <button type="button" class="btn-ghost" data-act="open-tax">Personnaliser les taux d'imposition</button>
+        </div>
+        <p class="desc" id="world-desc"></p>
+
+        <div class="sub-head">
+          <h4>Qualité de vie × coût de la vie</h4>
+          <div class="btns">
+            <button type="button" class="btn-ghost" id="btn-extended" data-act="extended">Liste étendue (74 pays)</button>
+            <button type="button" class="btn-ghost" id="btn-cities" data-act="cities">Mode villes (150)</button>
+          </div>
+        </div>
+        <p class="axis-note">À droite : meilleure qualité de vie (soleil, sécurité, santé). En haut : rente nécessaire plus faible, donc vie moins chère. Clique sur un drapeau pour le détail.</p>
+
+        <div class="qmap">
+          <div class="qaxis-y"><span>Moins<br>cher</span><span class="rot">Rente nette / mois</span><span>Plus<br>cher</span></div>
+          <div>
+            <div class="qcorners"><span>Qualité de vie moindre<br>Vie moins chère</span><span class="good">Meilleure qualité de vie<br>Vie moins chère</span></div>
+            <div class="plot" id="plot"></div>
+            <div class="qcorners"><span class="bad">Qualité de vie moindre<br>Vie plus chère</span><span>Meilleure qualité de vie<br>Vie plus chère</span></div>
+            <div class="qaxis-x"><span>Qualité de vie →</span><span>meilleure</span></div>
+          </div>
+        </div>
+        <div id="detail"></div>
+
+        <div class="notes-key">Notes /5 :
+          <span><i style="background:var(--lagoon)"></i>≥ 4</span>
+          <span><i style="background:var(--warn)"></i>≥ 3</span>
+          <span><i style="background:var(--bad)"></i>&lt; 3</span>
+          <span class="palm">🌴 fiscalité territoriale ou sans impôt sur le revenu</span>
+        </div>
+
+        <div class="tbl-wrap"><table id="tbl"></table></div>
+        <div class="more-row" id="more-row"></div>
+        <p class="foot">Coût de la vie, fiscalité et notes lifestyle indicatifs. Survole la fiscalité pour le détail. Les fourchettes fiscales sont un encadrement (calcul à la borne basse par défaut) : le taux réel dépend de ta situation, de ta résidence fiscale, parfois d'un visa, de tes enveloppes et du type de revenus (obligations, actions, pensions…). Une fiscalité territoriale 🌴 demande souvent un visa ou un statut spécifique. Outil éducatif, il ne remplace pas un professionnel.</p>
+      </section>
+    </main>
+  </div>
+</div>
+
+<button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false"><span>Sombre</span><span class="sw" aria-hidden="true"></span></button>
+<div class="tt" id="tt" role="tooltip" hidden></div>
+
+<div class="modal" id="tax-modal" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="tax-title">
+    <header>
+      <div>
+        <h3 id="tax-title">Taux d'imposition personnalisés</h3>
+        <p>Remplace la fourchette par ton propre taux pour un pays. Laisse vide pour garder la valeur par défaut.</p>
+      </div>
+      <button type="button" class="btn-ghost" data-act="close-tax">Fermer</button>
+    </header>
+    <div class="body"><table id="tax-tbl"></table></div>
+    <footer>
+      <button type="button" class="btn-ghost" data-act="reset-tax">Effacer tous mes taux</button>
+      <button type="button" class="btn-primary" data-act="close-tax">Appliquer</button>
+    </footer>
+  </div>
+</div>
+
+<script>
+/*CORE-START*/
+const NOW_YEAR = new Date().getFullYear();
+// Taux de change indicatifs (Banque de France, mi-octobre 2026) : 1 € = …
+const FX = { EUR: 1, CHF: 0.93, USD: 1.12, CAD: 1.59 };
+
+// code, nom, préposition, coût de la vie (France = 1), fiscalité basse %, haute %, territoriale, soleil, sécurité, santé, espérance de vie, sélection, note fiscale
+const COUNTRIES_RAW = [
+["FR","France","en",1.00,18.6,31.4,0,3.3,3.6,4.3,85,1,"PEA de plus de 5 ans : 18,6 % de prélèvements sociaux seulement. CTO : PFU de 31,4 % (12,8 % d'impôt + 18,6 % de PS), barème possible si ta tranche est basse."],
+["BE","Belgique","en",0.97,10,30,0,2.7,3.7,4.3,84,1,"Précompte mobilier de 30 % sur dividendes et intérêts ; taxe de 10 % sur les plus-values financières depuis 2026, avec abattement annuel."],
+["CH","Suisse","en",1.62,0,25,0,2.8,4.8,4.8,86,1,"Plus-values privées exonérées ; dividendes imposés au barème cantonal ; impôt annuel sur la fortune."],
+["ES","Espagne","en",0.80,19,30,0,4.6,3.9,4.1,85,1,"Revenus de l'épargne imposés de 19 % à 30 % selon le montant ; impôt sur la fortune dans certaines régions."],
+["IT","Italie","en",0.88,26,26,0,4.2,3.7,4.1,85,1,"Revenus financiers taxés à 26 % (12,5 % sur les obligations d'État)."],
+["US","États-Unis","aux",1.20,15,23.8,0,3.8,3.1,4.4,80,1,"Plus-values long terme et dividendes qualifiés : 0, 15 ou 20 %, plus 3,8 % de NIIT, plus l'impôt de l'État."],
+["CA","Canada","au",1.05,13,27,0,2.4,4.3,4.2,84,1,"Gains en capital inclus à 50 % au barème ; dividendes avec crédit d'impôt ; varie selon la province."],
+["TH","Thaïlande","en",0.45,0,35,0,4.7,3.9,4.0,80,1,"Revenus étrangers rapatriés imposables depuis 2024 ; exonération possible avec le visa LTR."],
+["MY","Malaisie","en",0.50,0,0,1,4.4,3.7,3.9,77,1,"Revenus de source étrangère des particuliers exonérés (régime prolongé jusqu'en 2036)."],
+["ID","Indonésie","en",0.42,0,20,1,4.6,3.6,3.0,73,1,"Étrangers éligibles imposés sur leurs seuls revenus indonésiens pendant 4 ans ; 20 % sur les dividendes locaux."],
+["PH","Philippines","aux",0.45,0,15,1,4.6,2.8,3.0,73,1,"Les étrangers résidents ne sont imposés que sur leurs revenus de source philippine."],
+["KH","Cambodge","au",0.42,0,14,0,4.7,3.0,2.6,72,1,"Imposition mondiale en théorie, peu appliquée aux revenus étrangers ; retenue de 14 % sur les dividendes locaux."],
+["PA","Panama","au",0.70,0,0,1,4.4,3.3,3.5,80,1,"Fiscalité territoriale : les revenus de source étrangère ne sont pas imposés."],
+["MA","Maroc","au",0.45,10,20,0,4.6,3.4,2.9,78,1,"Dividendes autour de 10 %, plus-values sur actions 15 à 20 % ; fort abattement sur les pensions de source étrangère."],
+["SG","Singapour","à",1.25,0,0,1,4.4,4.9,4.8,85,1,"Pas d'impôt sur les plus-values ni sur les dividendes ; revenus étrangers reçus par les particuliers exonérés."],
+["HK","Hong Kong","à",1.85,0,0,1,4.3,4.6,4.6,87,1,"Fiscalité territoriale : pas d'impôt sur les dividendes, les intérêts ni les plus-values."],
+["KR","Corée du Sud","en",0.88,15.4,22,0,3.5,4.5,4.6,85,1,"Dividendes et intérêts : 15,4 % ; barème progressif au-delà de 20 M KRW de revenus financiers."],
+["CN","Chine","en",0.68,20,20,0,3.4,4.4,3.9,80,1,"Dividendes et plus-values : 20 % ; les résidents de long terme sont imposés sur leurs revenus mondiaux."],
+["PT","Portugal","au",0.72,28,28,0,4.6,4.4,3.9,83,0,"Revenus du capital : 28 % (le régime RNH est fermé aux nouveaux arrivants)."],
+["GR","Grèce","en",0.70,5,15,0,4.7,4.0,3.5,82,0,"Dividendes 5 %, plus-values 15 % ; option forfaitaire de 7 % pour les retraités étrangers."],
+["CY","Chypre","à",0.82,0,3,0,4.8,4.2,3.7,83,0,"Statut non-domicilié : dividendes et intérêts exonérés, seule la cotisation santé GESY (environ 2,65 %) s'applique."],
+["MT","Malte","à",0.88,0,15,0,4.7,4.1,3.9,84,0,"Non-domiciliés imposés sur les seuls revenus rapatriés ; plus-values étrangères exonérées."],
+["HR","Croatie","en",0.65,0,12,0,4.3,4.3,3.5,80,0,"Dividendes et intérêts 12 % ; plus-values exonérées après 2 ans de détention."],
+["BG","Bulgarie","en",0.48,5,10,0,3.9,3.8,3.0,76,0,"Dividendes 5 % ; impôt sur le revenu à taux unique de 10 %."],
+["RO","Roumanie","en",0.52,10,16,0,3.7,3.9,3.0,77,0,"Dividendes et plus-values imposés à taux réduits (10 à 16 %), plus une cotisation santé."],
+["HU","Hongrie","en",0.58,15,28,0,3.6,4.0,3.3,78,0,"Revenus financiers : 15 % plus une contribution sociale de 13 % plafonnée."],
+["PL","Pologne","en",0.62,19,19,0,3.0,4.2,3.4,80,0,"Taxe Belka : 19 % sur les revenus du capital."],
+["CZ","Tchéquie","en",0.68,0,15,0,3.0,4.4,3.9,81,0,"Dividendes 15 % ; plus-values exonérées après 3 ans de détention."],
+["DE","Allemagne","en",1.00,26.4,26.4,0,2.8,3.9,4.3,82,0,"Abgeltungsteuer de 25 % plus solidarité (26,4 %) ; abattement partiel sur les fonds actions."],
+["AT","Autriche","en",1.02,27.5,27.5,0,3.0,4.4,4.4,83,0,"Revenus du capital : 27,5 %."],
+["NL","Pays-Bas","aux",1.10,30,40,0,2.6,4.2,4.3,83,0,"Box 3 : impôt sur un rendement forfaitaire du patrimoine, qui absorbe une grosse part du rendement réel."],
+["LU","Luxembourg","au",1.25,0,21,0,2.7,4.6,4.3,84,0,"Plus-values exonérées après 6 mois ; dividendes à 50 % au barème progressif."],
+["IE","Irlande","en",1.18,33,41,0,2.3,4.0,3.8,84,0,"Plus-values 33 % ; ETF et fonds soumis à une exit tax d'environ 38 à 41 %."],
+["GB","Royaume-Uni","au",1.12,0,24,0,2.5,3.6,3.9,82,0,"Comptes ISA exonérés ; sinon plus-values 18 à 24 % et dividendes 8,75 à 39,35 %."],
+["DK","Danemark","au",1.25,27,42,0,2.4,4.5,4.4,83,0,"Revenus d'actions : 27 %, puis 42 % au-delà d'un seuil."],
+["SE","Suède","en",1.05,16,30,0,2.3,3.9,4.3,84,0,"Compte ISK : impôt forfaitaire annuel sur la valeur du compte (moins de 1 % par an)."],
+["NO","Norvège","en",1.30,37.8,37.8,0,2.2,4.5,4.5,84,0,"Dividendes et plus-values : environ 37,8 % (taux majoré)."],
+["FI","Finlande","en",1.05,30,34,0,2.1,4.5,4.3,83,0,"Revenus du capital : 30 %, puis 34 % au-delà de 30 000 €."],
+["IS","Islande","en",1.42,22,22,0,1.8,4.8,4.3,84,0,"Revenus du capital : 22 %."],
+["EE","Estonie","en",0.78,22,24,0,2.4,4.4,3.8,80,0,"Taux unique sur les revenus, dividendes et plus-values compris (22 à 24 %)."],
+["GE","Géorgie","en",0.45,0,5,1,4.1,4.0,3.2,75,0,"Revenus de source étrangère non imposés ; dividendes locaux 5 %."],
+["AL","Albanie","en",0.48,8,15,0,4.5,3.8,2.7,80,0,"Dividendes 8 %, plus-values 15 % ; pensions étrangères exonérées."],
+["ME","Monténégro","au",0.55,9,15,0,4.4,3.9,2.9,78,0,"Dividendes et plus-values imposés entre 9 et 15 %."],
+["RS","Serbie","en",0.52,15,15,0,3.7,3.9,3.2,77,0,"Revenus du capital : 15 %."],
+["TR","Turquie","en",0.48,0,15,0,4.4,3.4,3.7,79,0,"Plus-values sur actions turques souvent exonérées ; retenue de 15 % sur les dividendes."],
+["AE","Émirats arabes unis","aux",1.22,0,0,1,4.7,4.8,4.3,81,0,"Pas d'impôt sur le revenu des particuliers."],
+["QA","Qatar","au",1.20,0,0,1,4.7,4.8,4.1,82,0,"Pas d'impôt sur le revenu des particuliers."],
+["OM","Oman","à",0.85,0,0,1,4.8,4.6,3.6,79,0,"Pas d'impôt sur le revenu des particuliers à ce jour ; un impôt est prévu pour les très hauts revenus à partir de 2028."],
+["EG","Égypte","en",0.30,10,10,0,4.9,3.0,2.5,73,0,"Dividendes et plus-values boursières : 10 %."],
+["TN","Tunisie","en",0.38,10,20,0,4.6,3.2,2.9,78,0,"Dividendes 10 % ; abattement de 80 % sur les pensions transférées de l'étranger."],
+["SN","Sénégal","au",0.55,10,20,0,4.6,3.4,2.4,70,0,"Dividendes 10 %, intérêts jusqu'à 20 %."],
+["MU","Maurice","à",0.62,0,15,0,4.6,4.0,3.3,76,0,"Pas d'impôt sur les plus-values ; dividendes exonérés pour les particuliers."],
+["ZA","Afrique du Sud","en",0.52,18,20,0,4.5,2.0,3.3,67,0,"Dividendes 20 % ; plus-values partiellement incluses au barème (18 % effectif au maximum)."],
+["KE","Kenya","au",0.45,5,15,0,4.4,2.8,2.5,68,0,"Retenue de 5 à 15 % sur dividendes et intérêts."],
+["MX","Mexique","au",0.58,10,10,0,4.6,2.6,3.5,76,0,"Plus-values et dividendes boursiers : 10 %."],
+["CR","Costa Rica","au",0.75,0,15,1,4.4,3.4,3.8,82,0,"Fiscalité territoriale : revenus passifs de source étrangère non imposés ; 15 % sur les revenus du capital locaux."],
+["CO","Colombie","en",0.45,10,20,0,4.3,2.6,3.6,78,0,"Résidents imposés sur leurs revenus mondiaux ; dividendes jusqu'à 20 %."],
+["EC","Équateur","en",0.48,0,10,0,4.2,2.7,3.1,79,0,"Revenus étrangers exonérés s'ils ont déjà été imposés ailleurs."],
+["PE","Pérou","au",0.48,5,6.25,0,4.0,2.7,3.0,78,0,"Revenus du capital locaux 5 %, de source étrangère 6,25 %."],
+["CL","Chili","au",0.65,10,35,0,4.0,3.2,3.8,82,0,"Revenus mondiaux imposés au barème progressif après 3 ans de résidence."],
+["AR","Argentine","en",0.52,0,15,0,4.0,3.0,3.6,78,0,"Actions locales souvent exonérées ; revenus financiers étrangers autour de 15 %."],
+["UY","Uruguay","en",0.82,0,12,1,3.9,3.7,3.7,79,0,"Revenus passifs étrangers exonérés pendant 11 ans pour les nouveaux résidents, puis 12 %."],
+["BR","Brésil","au",0.52,15,27.5,0,4.6,2.3,3.3,77,0,"Revenus financiers étrangers taxés à 15 % depuis 2024 ; revenus locaux jusqu'à 27,5 %."],
+["DO","République dominicaine","en",0.55,0,25,0,4.7,2.8,3.0,75,0,"Régime de résident retraité avec exonérations partielles ; sinon jusqu'à 25 %."],
+["JP","Japon","au",0.85,20.3,20.3,0,3.4,4.8,4.7,87,0,"Revenus du capital : 20,315 % ; comptes NISA exonérés dans la limite des plafonds."],
+["TW","Taïwan","à",0.72,0,20,0,3.8,4.7,4.6,82,0,"Plus-values sur actions exonérées ; revenus étrangers soumis à un impôt minimum de 20 % au-delà d'un seuil."],
+["VN","Viêt Nam","au",0.40,1,5,0,4.5,4.0,3.0,75,0,"Taxe de 0,1 % sur le prix de cession des titres ; dividendes 5 %."],
+["LK","Sri Lanka","au",0.38,0,15,0,4.6,3.5,2.9,78,0,"Retenue de 15 % sur les dividendes locaux ; revenus étrangers peu imposés en pratique."],
+["IN","Inde","en",0.32,12.5,20,0,4.4,3.0,3.0,73,0,"Plus-values long terme 12,5 %, court terme 20 % ; dividendes au barème."],
+["NP","Népal","au",0.32,5,10,0,3.8,3.6,2.4,72,0,"Dividendes 5 %, plus-values 5 à 10 %."],
+["AU","Australie","en",1.15,15,30,0,4.3,4.2,4.4,85,0,"Plus-values au barème avec abattement de 50 % après un an ; dividendes avec crédit d'impôt."],
+["NZ","Nouvelle-Zélande","en",1.10,0,33,0,3.3,4.4,4.2,84,0,"Pas d'impôt général sur les plus-values ; nouveaux résidents exonérés sur leurs revenus étrangers pendant 4 ans."],
+["IL","Israël","en",1.28,25,30,0,4.6,2.8,4.4,84,0,"Plus-values et dividendes : 25 % (30 % pour les gros actionnaires)."],
+["SI","Slovénie","en",0.75,25,27.5,0,3.3,4.6,4.0,82,0,"Dividendes 25 % ; plus-values dégressives selon la durée de détention."]
+];
+
+// nom, coût de la vie (France = 1), soleil, sécurité, santé
+const CITIES_RAW = {
+FR:[["Paris",1.32,2.9,3.0,4.7],["Lyon",1.03,3.3,3.3,4.5],["Marseille",0.96,4.6,2.7,4.3],["Toulouse",0.95,3.9,3.3,4.4],["Nice",1.10,4.6,3.4,4.3],["Nantes",0.97,3.3,3.3,4.3],["Montpellier",0.95,4.5,3.1,4.4],["Strasbourg",0.96,2.9,3.4,4.4],["Bordeaux",1.01,3.8,3.2,4.4],["Lille",0.92,2.6,3.1,4.4],["Rennes",0.95,3.0,3.6,4.3],["Reims",0.84,2.8,3.5,4.0],["Toulon",0.90,4.6,3.3,4.0],["Saint-Étienne",0.79,3.4,3.3,4.0],["Le Havre",0.82,2.7,3.4,3.9],["Grenoble",0.92,3.6,3.0,4.4],["Dijon",0.86,3.2,3.7,4.2],["Angers",0.86,3.3,3.8,4.1],["Nîmes",0.85,4.4,3.1,4.0],["Chambéry",0.90,3.5,3.9,3.9],["Clermont-Ferrand",0.84,3.4,3.6,4.2],["Le Mans",0.80,3.2,3.7,3.9],["Aix-en-Provence",1.06,4.6,3.6,4.2],["Brest",0.80,2.8,3.8,4.1],["Tours",0.86,3.3,3.7,4.2],["Amiens",0.80,2.7,3.4,4.0],["Limoges",0.77,3.2,3.7,4.0],["Annecy",1.10,3.5,4.2,4.0],["Perpignan",0.82,4.7,3.0,3.9],["Metz",0.84,2.8,3.4,4.0],["Besançon",0.82,3.0,3.7,4.1],["Orléans",0.86,3.2,3.5,3.9],["Rouen",0.88,2.7,3.3,4.2],["Caen",0.86,2.8,3.7,4.1],["Mulhouse",0.79,3.0,3.0,3.9],["Nancy",0.84,2.9,3.5,4.2],["Avignon",0.86,4.5,3.0,3.9],["Poitiers",0.81,3.5,3.8,4.0],["La Rochelle",0.96,3.9,4.0,3.9],["Pau",0.84,3.7,3.9,3.9],["Biarritz",1.12,3.6,4.2,3.9],["Bayonne",0.95,3.6,3.9,3.9],["Ajaccio",0.98,4.7,3.8,3.6],["Cannes",1.14,4.6,3.6,4.0],["Antibes",1.09,4.6,3.7,4.0],["Saint-Malo",0.99,3.2,4.1,3.8],["Vannes",0.93,3.3,4.1,3.8]],
+US:[["New York",1.58,3.4,3.0,4.6],["Los Angeles",1.42,4.8,2.8,4.5],["San Francisco",1.62,4.0,2.8,4.6],["Miami",1.32,4.8,2.9,4.3],["Austin",1.15,4.4,3.3,4.3],["Chicago",1.20,3.2,2.6,4.4],["Boston",1.45,3.2,3.4,4.8],["Seattle",1.38,2.6,3.0,4.5],["San Diego",1.38,4.8,3.5,4.4],["Denver",1.18,4.3,3.1,4.3],["Phoenix",1.05,5.0,3.0,4.2],["Las Vegas",1.02,5.0,2.9,3.9],["Houston",1.00,4.2,2.7,4.5],["Atlanta",1.08,4.0,2.7,4.3],["Orlando",1.05,4.7,3.1,4.2],["Tampa",1.05,4.7,3.2,4.2]],
+CH:[["Zurich",1.78,2.9,4.8,4.9],["Genève",1.80,3.2,4.4,4.9],["Bâle",1.62,3.0,4.6,4.8],["Lausanne",1.64,3.2,4.6,4.8],["Berne",1.55,3.0,4.9,4.8],["Lucerne",1.58,2.9,4.9,4.6],["Lugano",1.52,3.9,4.8,4.6],["Saint-Gall",1.46,2.7,4.9,4.6],["Neuchâtel",1.42,3.0,4.8,4.5],["Fribourg",1.43,3.0,4.8,4.5],["Sion",1.40,3.8,4.9,4.4],["Montreux",1.56,3.3,4.9,4.5],["Zoug",1.82,3.0,4.9,4.6],["Winterthour",1.52,2.8,4.8,4.6],["Bienne",1.40,2.9,4.6,4.5],["Coire",1.45,3.2,4.9,4.4]],
+BE:[["Bruxelles",1.02,2.6,3.2,4.5],["Anvers",0.98,2.6,3.4,4.4],["Gand",0.96,2.6,3.8,4.4],["Bruges",0.94,2.7,4.1,4.2],["Liège",0.86,2.7,3.2,4.3],["Namur",0.87,2.7,3.9,4.1],["Louvain",0.98,2.6,4.1,4.6],["Charleroi",0.80,2.6,2.9,4.0],["Mons",0.82,2.6,3.5,4.0],["Malines",0.93,2.6,3.9,4.1],["Hasselt",0.88,2.7,4.1,4.1],["Ostende",0.91,2.9,3.8,4.0],["Courtrai",0.87,2.7,4.0,4.0],["Waterloo",1.03,2.6,4.2,4.1]],
+CA:[["Montréal",0.96,2.6,4.1,4.1],["Québec",0.88,2.4,4.6,4.1],["Toronto",1.26,2.6,3.9,4.4],["Vancouver",1.33,2.4,3.8,4.3],["Ottawa",1.08,2.6,4.4,4.3],["Calgary",1.06,3.0,4.1,4.2],["Edmonton",0.99,2.8,3.7,4.1],["Victoria",1.18,2.8,4.4,4.1],["Halifax",1.01,2.4,4.2,4.0],["Winnipeg",0.92,2.8,3.4,4.0]],
+TH:[["Bangkok",0.52,4.4,3.7,4.5],["Chiang Mai",0.40,4.5,4.1,4.1],["Phuket",0.56,4.8,3.8,4.1],["Pattaya",0.46,4.8,3.4,3.9],["Hua Hin",0.46,4.8,4.1,3.8],["Koh Samui",0.56,4.8,3.9,3.6],["Krabi",0.45,4.8,4.0,3.4],["Chiang Rai",0.36,4.4,4.2,3.5],["Khon Kaen",0.35,4.6,4.1,3.6]],
+ES:[["Madrid",0.92,4.5,3.8,4.4],["Barcelone",0.96,4.5,3.3,4.4],["Valence",0.76,4.7,3.8,4.2],["Séville",0.72,4.9,3.6,4.1],["Malaga",0.82,4.9,3.9,4.1],["Alicante",0.72,4.9,3.8,4.0],["Palma",0.92,4.7,3.9,4.0],["Bilbao",0.86,3.3,4.1,4.3],["Las Palmas",0.76,4.9,3.8,4.0]],
+ID:[["Bali (Canggu)",0.50,4.7,3.6,3.2],["Ubud",0.40,4.5,3.9,3.0],["Jakarta",0.46,4.2,3.2,3.6],["Yogyakarta",0.30,4.5,3.9,3.1],["Lombok",0.36,4.8,3.6,2.6]],
+MA:[["Marrakech",0.47,4.8,3.4,3.0],["Casablanca",0.50,4.4,3.1,3.2],["Agadir",0.42,4.9,3.6,2.8],["Tanger",0.44,4.4,3.4,2.9]],
+CN:[["Shanghai",0.86,3.2,4.5,4.3],["Pékin",0.82,3.6,4.5,4.3],["Shenzhen",0.82,3.9,4.5,4.1],["Chengdu",0.56,2.8,4.4,3.9]],
+PH:[["Manille",0.50,4.4,2.6,3.4],["Cebu",0.42,4.6,2.9,3.0],["Dumaguete",0.35,4.6,3.3,2.7]],
+MY:[["Kuala Lumpur",0.53,4.2,3.5,4.1],["Penang",0.46,4.5,3.9,4.0],["Johor Bahru",0.42,4.3,3.4,3.6]],
+IT:[["Milan",1.06,3.6,3.5,4.4],["Rome",0.96,4.4,3.4,4.1],["Naples",0.76,4.6,2.9,3.7]],
+KR:[["Séoul",0.93,3.4,4.5,4.7],["Busan",0.76,3.8,4.5,4.5]],
+KH:[["Phnom Penh",0.43,4.6,2.9,2.9],["Siem Reap",0.36,4.7,3.2,2.4]],
+PA:[["Panama City",0.70,4.4,3.3,3.6]]
+};
+
+const COUNTRIES = COUNTRIES_RAW.map(r => ({ code:r[0], name:r[1], prep:r[2], col:r[3], tlo:r[4], thi:r[5], terr:!!r[6], sun:r[7], safe:r[8], health:r[9], le:r[10], featured:!!r[11], note:r[12], cities:[] }));
+const BY = Object.fromEntries(COUNTRIES.map(c => [c.code, c]));
+for (const [code, list] of Object.entries(CITIES_RAW)) BY[code].cities = list.map(([name, col, sun, safe, health]) => ({ name, col, sun, safe, health }));
+
+function prepName(c){ return c.prep === "à" ? "à " + c.name : c.prep + " " + c.name; }
+function destination(code, cityName){
+  const c = BY[code] || BY.FR;
+  if (cityName){
+    const ct = c.cities.find(x => x.name === cityName);
+    if (ct) return { ...c, city: ct.name, col: ct.col, sun: ct.sun, safe: ct.safe, health: ct.health, label: ct.name, where: "à " + ct.name + " (" + c.name + ")" };
+  }
+  return { ...c, city: null, label: c.name, where: prepName(c) };
+}
+const locCol = (code, city) => destination(code, city).col;
+
+// Hypothèses figées du mode simplifié
+const SIMPLE_HYP = { activeCountry:"FR", activeCity:"", retireCountry:"FR", retireCity:"", returnRate:8, renteRate:5.5,
+  inflationOn:false, realAccum:false, lifeCustom:true, lifeExp:85, consume:false, marginOn:false, reservesOn:false,
+  noState:false, statePension:1800, statePensionAge:64 };
+function effParams(s){
+  if (s.mode === "simple") return { ...s, ...SIMPLE_HYP, adv:false, savingsEff: s.savings, refCol: 1 };
+  const savingsEff = s.savingsAuto ? Math.max(0, s.salary - s.costActive) : s.savingsAdv;
+  return { ...s, adv:true, savingsEff, refCol: locCol(s.retireCountry, s.retireCity) };
+}
+function taxRate(d, p){
+  const o = p.taxOverrides ? p.taxOverrides[d.code] : undefined;
+  if (o !== undefined && o !== null && o !== "" && isFinite(o)) return Math.min(95, Math.max(0, +o)) / 100;
+  return d.tlo / 100;
+}
+function annuity(x, N){ if (N <= 0) return 0; if (Math.abs(x) < 1e-9) return N; return (1 - Math.pow(1 + x, -N)) / x; }
+
+// Moteur
+// Phase active : capital = (capital + 12 × épargne) × (1 + croissance), versements en début d'année.
+// Cible : rente brute annuelle ÷ (taux de rente − inflation), ou annuité jusqu'à espérance de vie + 10 ans si le capital est consommé,
+//         + marge de sécurité (années de dépenses nettes) + complément de réserve de secours.
+// Phase rentier : capital × (1 + taux de rente − inflation) − retraits ; la pension d'État réduit les retraits dès son âge de versement.
+function simulate(p, d, lite){
+  const net = p.pension * d.col / p.refCol;               // même train de vie, ramené au coût de la vie local
+  const tax = taxRate(d, p);
+  const gross = net / (1 - tax);
+  const W = 12 * gross;
+  const infl = p.inflationOn ? (+p.inflation || 0) / 100 : 0;
+  const x = p.renteRate / 100 - infl;                      // rente réelle
+  const gA = p.returnRate / 100 - (p.realAccum ? infl : 0);
+  const age = Math.round(+p.age);
+  const LE = Math.max(age + 1, Math.round(p.lifeCustom ? +p.lifeExp : d.le));
+  const H = p.consume ? LE + 10 : LE;                      // horizon d'épuisement ou de projection
+  const spNet = p.noState ? 0 : Math.max(0, +p.statePension || 0);
+  const spAge = Math.round(+p.statePensionAge || 64);
+  const grossAfter = Math.max(0, net - spNet) / (1 - tax);
+  const Wa = a => 12 * (a >= spAge ? grossAfter : gross);
+  const margin = p.marginOn ? Math.max(0, +p.marginYears || 0) * net * 12 : 0;
+  const topUp = p.reservesOn ? Math.max(0, (+p.reserveRentier || 0) - (+p.reserveActive || 0)) : 0;
+  const base = (annual, R) => p.consume ? annual * annuity(x, H - R) : (x > 0 ? annual / x : (annual > 0 ? Infinity : 0));
+  const target = R => base(W, R) + margin + topUp;
+  let C = Math.max(0, +p.capital || 0), n = 0;
+  const S = Math.max(0, +p.savingsEff || 0) * 12;
+  const capital = [C];
+  let T = target(age);
+  while (C < T && age + n < H - 1){ C = (C + S) * (1 + gA); n++; capital.push(C); T = target(age + n); }
+  const reached = C >= T;
+  const R = age + n;
+  const out = { net, gross, tax, W, grossAfter, T, base: base(W, R), margin, topUp, R, n, year: NOW_YEAR + n, reached, CR: C,
+    LE, H, x, gA, infl, spNet, spAge, consume: !!p.consume, tPension: base(12 * grossAfter, R) + margin + topUp };
+  if (lite) return out;
+  const ages = [];
+  for (let a = age; a <= H; a++) ages.push(a);
+  let exhaustedAt = null;
+  if (reached){
+    let X = C - topUp;
+    for (let a = R; a < H; a++){ X = X * (1 + x) - Wa(a); if (X <= 0){ if (exhaustedAt === null) exhaustedAt = a + 1; X = 0; } capital.push(X); }
+  } else {
+    let X = C;
+    for (let a = R; a < H; a++){ X = (X + S) * (1 + gA); capital.push(X); }
+  }
+  const cont = ages.map(() => null);
+  if (reached){
+    const maxMain = Math.max(...capital);
+    const cap = Math.max(maxMain, (isFinite(T) ? T : 0) * 1.6);
+    let Y = C;
+    cont[R - age] = Y;
+    for (let a = R + 1; a <= H && a <= R + 15; a++){ Y = (Y + S) * (1 + gA); if (Y > cap) break; cont[a - age] = Y; }
+  }
+  return { ...out, ages, capital, cont, exhaustedAt, endCapital: capital[capital.length - 1] };
+}
+/*CORE-END*/
+
+/* ---------- Drapeaux (SVG simplifiés, 30×20) ---------- */
+const F = (() => {
+  const R = (x,y,w,h,c) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;
+  const Ci = (cx,cy,r,c) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}"/>`;
+  const P = (pts,c) => `<polygon points="${pts}" fill="${c}"/>`;
+  const stripes = (dir, items) => {
+    const it = items.map(c => Array.isArray(c) ? c : [c,1]); const tot = it.reduce((s,i) => s + i[1], 0); let o = 0;
+    return it.map(([c,w]) => { const L = (dir === "h" ? 20 : 30) * w / tot; const r = dir === "h" ? R(0,o.toFixed(2),30,(L+.06).toFixed(2),c) : R(o.toFixed(2),0,(L+.06).toFixed(2),20,c); o += L; return r; }).join("");
+  };
+  const H = (...c) => stripes("h", c), V = (...c) => stripes("v", c);
+  const St = (cx,cy,r,c) => { const p = []; for (let i = 0; i < 10; i++){ const rr = i % 2 ? r * .42 : r; const a = -Math.PI/2 + i * Math.PI/5; p.push((cx + rr*Math.cos(a)).toFixed(2) + "," + (cy + rr*Math.sin(a)).toFixed(2)); } return P(p.join(" "), c); };
+  const Pent = (cx,cy,r,c) => { const o = [0,2,4,1,3].map(k => { const a = -Math.PI/2 + k * 2*Math.PI/5; return (cx + r*Math.cos(a)).toFixed(2) + "," + (cy + r*Math.sin(a)).toFixed(2); }); return `<polygon points="${o.join(" ")}" fill="none" stroke="${c}" stroke-width="1"/>`; };
+  const Nord = (bg,cr,inner) => inner ? R(0,0,30,20,bg) + R(8,0,6,20,cr) + R(0,7,30,6,cr) + R(9.6,0,2.8,20,inner) + R(0,8.6,30,2.8,inner) : R(0,0,30,20,bg) + R(9,0,4,20,cr) + R(0,8,30,4,cr);
+  const multi = (n, a, b) => { let s = ""; for (let i = 0; i < n; i++) s += R(0,(i*20/n).toFixed(2),30,(20/n+.06).toFixed(2), i % 2 ? b : a); return s; };
+  const UJ = () => R(0,0,30,20,"#012169") + `<path d="M0,0L30,20M30,0L0,20" stroke="#fff" stroke-width="4"/><path d="M0,0L30,20M30,0L0,20" stroke="#C8102E" stroke-width="1.3"/>` + R(12,0,6,20,"#fff") + R(0,7,30,6,"#fff") + R(13.2,0,3.6,20,"#C8102E") + R(0,8.2,30,3.6,"#C8102E");
+  const qaSerr = () => { let pts = "0,0 9,0"; for (let i = 1; i <= 18; i++) pts += ` ${i % 2 ? 11.5 : 9},${(i*20/18).toFixed(2)}`; return P(pts + " 0,20", "#fff"); };
+  const D = {
+    FR:() => V("#0055A4","#fff","#EF4135"), BE:() => V("#1a1a1a","#FDDA24","#EF3340"), IT:() => V("#009246","#fff","#CE2B37"),
+    IE:() => V("#169B62","#fff","#FF883E"), RO:() => V("#002B7F","#FCD116","#CE1126"), PE:() => V("#D91023","#fff","#D91023"),
+    MX:() => V("#006847","#fff","#CE1126") + Ci(15,10,2.2,"#8c5a2b"), SN:() => V("#00853F","#FDEF42","#E31B23") + St(15,10,3,"#00853F"),
+    CA:() => V("#D80621",["#fff",2],"#D80621") + P("15,4.3 16.1,6.9 17.9,6.3 17.3,9.3 19.2,8.8 18.2,11 15.5,12 15.5,15.6 14.5,15.6 14.5,12 11.8,11 10.8,8.8 12.7,9.3 12.1,6.3 13.9,6.9","#D80621"),
+    DE:() => H("#1a1a1a","#DD0000","#FFCE00"), AT:() => H("#ED2939","#fff","#ED2939"), NL:() => H("#AE1C28","#fff","#21468B"),
+    LU:() => H("#EF3340","#fff","#00A3E0"), HU:() => H("#CE2939","#fff","#477050"), BG:() => H("#fff","#00966E","#D62612"),
+    EE:() => H("#0072CE","#1a1a1a","#fff"), PL:() => H("#fff","#DC143C"), ID:() => H("#CE1126","#fff"),
+    TH:() => H("#A51931","#F4F5F8",["#2D2A4A",2],"#F4F5F8","#A51931"), CO:() => H(["#FCD116",2],"#003893","#CE1126"),
+    EC:() => H(["#FFDD00",2],"#034EA2","#ED1C24") + Ci(15,10,2.2,"#8a6d3b"), ES:() => H("#AA151B",["#F1BF00",2],"#AA151B"),
+    RS:() => H("#C6363C","#0C4076","#fff") + R(7,4.5,4,7,"#C6363C") + R(7.6,5,2.8,6,"#fff"),
+    SI:() => H("#fff","#005CE6","#ED1C24") + P("7,3.5 12,3.5 12,8.5 9.5,10.5 7,8.5","#005CE6"),
+    CZ:() => H("#fff","#D7141A") + P("0,0 15,10 0,20","#11457E"), CR:() => H("#002B7F","#fff",["#CE1126",2],"#fff","#002B7F"),
+    MU:() => H("#EA2839","#1A206D","#FFD500","#00A551"), KH:() => H("#032EA1",["#E00025",2],"#032EA1") + R(11,8,8,4,"#fff") + R(14,6.5,2,1.5,"#fff"),
+    AR:() => H("#74ACDF","#fff","#74ACDF") + Ci(15,10,2,"#F6B40E"),
+    IN:() => H("#FF9933","#fff","#138808") + `<circle cx="15" cy="10" r="2.4" fill="none" stroke="#000080" stroke-width=".8"/>`,
+    EG:() => H("#CE1126","#fff","#1a1a1a") + Ci(15,10,1.8,"#C09300"),
+    KE:() => H(["#1a1a1a",6],["#fff",1],["#BB0000",6],["#fff",1],["#006600",6]) + `<ellipse cx="15" cy="10" rx="2.6" ry="5.2" fill="#BB0000" stroke="#1a1a1a" stroke-width=".8"/>`,
+    HR:() => H("#FF0000","#fff","#171796") + R(12,5,6,7,"#fff") + R(12,5,2,2,"#FF0000") + R(16,5,2,2,"#FF0000") + R(14,7,2,2,"#FF0000") + R(12,9,2,2,"#FF0000") + R(16,9,2,2,"#FF0000"),
+    ME:() => R(0,0,30,20,"#D3AE3B") + R(1.2,1.2,27.6,17.6,"#C40308") + Ci(15,10,3,"#D3AE3B"),
+    AL:() => R(0,0,30,20,"#E41E20") + P("15,3.5 19.5,7.5 17.2,8.6 18.2,15 15,12.8 11.8,15 12.8,8.6 10.5,7.5","#1a1a1a"),
+    GE:() => R(0,0,30,20,"#fff") + R(13,0,4,20,"#FF0000") + R(0,8,30,4,"#FF0000") + [[6.5,4],[23.5,4],[6.5,16],[23.5,16]].map(([x,y]) => R(x-.6,y-2,1.2,4,"#FF0000") + R(x-2,y-.6,4,1.2,"#FF0000")).join(""),
+    CH:() => R(0,0,30,20,"#DA291C") + R(13,4,4,12,"#fff") + R(9,8,12,4,"#fff"),
+    DK:() => Nord("#C8102E","#fff"), SE:() => Nord("#006AA7","#FECC00"), FI:() => Nord("#fff","#002F6C"),
+    NO:() => Nord("#BA0C2F","#fff","#00205B"), IS:() => Nord("#02529C","#fff","#DC1E35"),
+    GB:() => UJ(),
+    AU:() => R(0,0,30,20,"#012169") + `<g transform="scale(.5)">${UJ()}</g>` + St(7.5,15,2.4,"#fff") + St(23,4,1.1,"#fff") + St(26,9,1.1,"#fff") + St(20.5,10,1.1,"#fff") + St(23,16.5,1.2,"#fff"),
+    NZ:() => R(0,0,30,20,"#012169") + `<g transform="scale(.5)">${UJ()}</g>` + St(23,4.5,1.3,"#C8102E") + St(26,9,1.3,"#C8102E") + St(20.5,9.5,1.3,"#C8102E") + St(23,16,1.4,"#C8102E"),
+    US:() => multi(13,"#B22234","#fff") + R(0,0,12,10.77,"#3C3B6E") + [2,5,8].map(y => [2,5,8,11].map(x => Ci(x-0.8,y,.5,"#fff")).join("")).join(""),
+    MY:() => multi(14,"#CC0001","#fff") + R(0,0,15,11.43,"#010066") + Ci(6,5.7,3.6,"#FFCC00") + Ci(7.3,5.7,3,"#010066") + St(11.3,5.7,2,"#FFCC00"),
+    SG:() => H("#EF3340","#fff") + Ci(6,5,3.2,"#fff") + Ci(7.4,5,3,"#EF3340") + [[10,2.9],[11.8,4.2],[11.1,6.3],[8.9,6.3],[8.2,4.2]].map(([x,y]) => St(x,y,.75,"#fff")).join(""),
+    HK:() => R(0,0,30,20,"#DE2910") + [0,1,2,3,4].map(i => `<ellipse cx="15" cy="6.6" rx="1.6" ry="3.1" fill="#fff" transform="rotate(${i*72} 15 10)"/>`).join(""),
+    CN:() => R(0,0,30,20,"#DE2910") + St(5,5,3,"#FFDE00") + St(10,2,1,"#FFDE00") + St(12,4,1,"#FFDE00") + St(12,7,1,"#FFDE00") + St(10,9,1,"#FFDE00"),
+    VN:() => R(0,0,30,20,"#DA251D") + St(15,10.5,5,"#FFFF00"),
+    TR:() => R(0,0,30,20,"#E30A17") + Ci(11,10,5,"#fff") + Ci(12.3,10,4,"#E30A17") + St(17.6,10,2.2,"#fff"),
+    TN:() => R(0,0,30,20,"#E70013") + Ci(15,10,5,"#fff") + Ci(15,10,3.6,"#E70013") + Ci(16.2,10,3,"#fff") + St(16.3,10,2,"#E70013"),
+    MA:() => R(0,0,30,20,"#C1272D") + Pent(15,10.4,4.2,"#006233"),
+    JP:() => R(0,0,30,20,"#fff") + Ci(15,10,6,"#BC002D"),
+    KR:() => R(0,0,30,20,"#fff") + `<path d="M10,10a5,5 0 0,1 10,0Z" fill="#CD2E3A"/><path d="M10,10a5,5 0 0,0 10,0Z" fill="#0047A0"/>` + R(3,3,4,1.2,"#1a1a1a") + R(23,3,4,1.2,"#1a1a1a") + R(3,15.8,4,1.2,"#1a1a1a") + R(23,15.8,4,1.2,"#1a1a1a"),
+    TW:() => R(0,0,30,20,"#FE0000") + R(0,0,15,10,"#000095") + Ci(7.5,5,2.6,"#fff"),
+    PH:() => H("#0038A8","#CE1126") + P("0,0 15,10 0,20","#fff") + Ci(5,10,2.2,"#FCD116"),
+    PA:() => R(0,0,30,20,"#fff") + R(15,0,15,10,"#DA121A") + R(0,10,15,10,"#072357") + St(7.5,5,2.6,"#072357") + St(22.5,15,2.6,"#DA121A"),
+    DO:() => R(0,0,30,20,"#fff") + R(0,0,13,8,"#002D62") + R(17,0,13,8,"#CE1126") + R(0,12,13,8,"#CE1126") + R(17,12,13,8,"#002D62"),
+    CL:() => H("#fff","#D52B1E") + R(0,0,10,10,"#0039A6") + St(5,5,2.6,"#fff"),
+    UY:() => multi(9,"#fff","#0038A8") + R(0,0,11.1,11.1,"#fff") + Ci(5.5,5.5,2.5,"#FCD116"),
+    BR:() => R(0,0,30,20,"#009C3B") + P("15,2.2 27.5,10 15,17.8 2.5,10","#FFDF00") + Ci(15,10,4.3,"#002776"),
+    PT:() => V(["#006600",2],["#FF0000",3]) + Ci(12,10,3.6,"#FFE900") + R(10.4,7.8,3.2,4.2,"#FF0000") + R(11.1,8.6,1.8,2.4,"#fff"),
+    GR:() => multi(9,"#0D5EAF","#fff") + R(0,0,11.1,11.1,"#0D5EAF") + R(4.44,0,2.22,11.1,"#fff") + R(0,4.44,11.1,2.22,"#fff"),
+    CY:() => R(0,0,30,20,"#fff") + `<ellipse cx="15" cy="8.6" rx="7" ry="2.8" fill="#D57800"/><path d="M10,14q5,3.2 10,0" stroke="#4E5B31" stroke-width="1.3" fill="none"/>`,
+    MT:() => V("#fff","#CF142B") + R(2,2,3.2,3.2,"#a6a6a6"),
+    AE:() => H("#00732F","#fff","#1a1a1a") + R(0,0,8,20,"#FF0000"),
+    QA:() => R(0,0,30,20,"#8D1B3D") + qaSerr(),
+    OM:() => R(0,0,30,20,"#DB161B") + R(8,0,22,6.67,"#fff") + R(8,13.33,22,6.67,"#008000"),
+    ZA:() => R(0,0,30,10,"#E03C31") + R(0,10,30,10,"#001489") + P("0,0 4,0 14,7 30,7 30,13 14,13 4,20 0,20","#fff") + P("0,0 2.5,0 13,8 30,8 30,12 13,12 2.5,20 0,20","#007749") + P("0,3.4 9.2,10 0,16.6","#FFB81C") + P("0,5 7,10 0,15","#1a1a1a"),
+    LK:() => R(0,0,30,20,"#FFBE29") + R(1,1,4,18,"#00534E") + R(5,1,4,18,"#EB7400") + R(10,1,19,18,"#8D153A") + Ci(19.5,10,3,"#FFBE29"),
+    NP:() => `<path d="M8,1L22,10H13L22,19H8Z" fill="#DC143C" stroke="#003893" stroke-width="1.2"/>` + Ci(11.5,7.5,1.4,"#fff") + Ci(11.5,14.5,1.6,"#fff"),
+    IL:() => R(0,0,30,20,"#fff") + R(0,2,30,2.6,"#0038B8") + R(0,15.4,30,2.6,"#0038B8") + `<polygon points="15,5.8 18.6,12 11.4,12" fill="none" stroke="#0038B8" stroke-width=".9"/><polygon points="15,14.2 18.6,8 11.4,8" fill="none" stroke="#0038B8" stroke-width=".9"/>`
+  };
+  const cache = {};
+  return code => cache[code] || (cache[code] = `<svg class="flag" viewBox="0 0 30 20" aria-hidden="true" preserveAspectRatio="none">${D[code] ? D[code]() : R(0,0,30,20,"#ccc")}</svg>`);
+})();
+
+
+/* ---------- État ---------- */
+const $ = s => document.querySelector(s);
+const KEY = "calculateur-rentier-v2", THEME_KEY = "calculateur-rentier-theme";
+const store = {
+  get(k){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch(e){ return null; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+};
+const CATS = ["Logement","Alimentation","Transports","Santé","Loisirs & voyages","Autres"];
+const W_DEFAULT = [0.35, 0.18, 0.10, 0.06, 0.16, 0.15];
+// Valeurs d'exemple : celles de tes captures, pour comparer avec l'outil d'origine.
+const DEFAULTS = { mode:"simple", currency:"EUR", age:24, capital:100000, savings:1329, pension:3130,
+  salary:3400, costActive:2071, savingsAuto:true, savingsAdv:1329,
+  activeCountry:"FR", activeCity:"", retireCountry:"FR", retireCity:"",
+  returnRate:8, renteRate:5.5, consume:false, inflationOn:false, inflation:2, realAccum:false,
+  lifeCustom:false, lifeExp:90, marginOn:false, marginYears:10, reservesOn:false, reserveActive:5000, reserveRentier:12000,
+  noState:false, statePension:1800, statePensionAge:64,
+  costW:W_DEFAULT.slice(), pensionW:W_DEFAULT.slice(), showCostDetail:false, showPensionDetail:false,
+  taxOverrides:{}, extended:false, cityMode:false, sortKey:"name", sortDir:1, expanded:{}, selected:null };
+const clone = o => JSON.parse(JSON.stringify(o));
+let state = Object.assign(clone(DEFAULTS), store.get(KEY) || {});
+function sanitize(){
+  if (!state.taxOverrides || typeof state.taxOverrides !== "object") state.taxOverrides = {};
+  if (!state.expanded || typeof state.expanded !== "object") state.expanded = {};
+  if (!FX[state.currency]) state.currency = "EUR";
+  for (const k of ["retireCountry","activeCountry"]) if (!BY[state[k]]) state[k] = "FR";
+  for (const k of ["costW","pensionW"]) if (!Array.isArray(state[k]) || state[k].length !== 6) state[k] = W_DEFAULT.slice();
+}
+sanitize();
+
+const FR_COST = [1600, 2400, 4200, 8000];
+const FR_SALARY = [1500, 2300, 4000, 8000];
+const LV_COST = ["Classe populaire","Classe moyenne","Aisé","Riche"];
+const LV_SAL = ["Populaire","Moyenne","Aisé","Riche"];
+const bracket = v => v < 2000 ? "classe populaire" : v < 3300 ? "classe moyenne" : v < 6100 ? "aisé" : "riche";
+const CUR_SYM = { EUR:"€", CHF:"CHF", USD:"$", CAD:"$CA" };
+const ten = v => Math.round(v / 10) * 10;
+const activeCol = () => locCol(state.activeCountry, state.activeCity);
+const retireCol = () => locCol(state.retireCountry, state.retireCity);
+
+/* ---------- Formats ---------- */
+const nf0 = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+const nf2 = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
+const moneyFmt = {};
+function money(eur){
+  if (!isFinite(eur)) return "—";
+  const cur = state.currency;
+  moneyFmt[cur] = moneyFmt[cur] || new Intl.NumberFormat("fr-FR", { style:"currency", currency:cur, maximumFractionDigits:0 });
+  return moneyFmt[cur].format(Math.round(eur * FX[cur]));
+}
+const pct = x => nf2.format(Math.round(x * 10000) / 100) + " %";
+const rangeTxt = (lo, hi) => lo === hi ? nf2.format(lo) + " %" : nf2.format(lo) + "–" + nf2.format(hi) + " %";
+const plural = (n, w) => n + " " + w + (Math.abs(n) > 1 ? "s" : "");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+const score = v => `<span class="${v >= 4 ? "s-good" : v >= 3 ? "s-mid" : "s-bad"}">${v.toFixed(1).replace(".", ",")}</span>`;
+function parseNum(s){ const n = parseFloat(String(s).replace(/[\s  ]/g, "").replace(",", ".")); return isFinite(n) ? n : null; }
+
+/* ---------- Champs ---------- */
+const FIELDS = [
+  { id:"in-age", key:"age", kind:"int", min:16, max:90 },
+  { id:"in-capital", key:"capital", kind:"money", min:0, max:1e10 },
+  { id:"in-savings", key:"savings", kind:"money", min:0, max:1e8 },
+  { id:"in-pension", key:"pension", kind:"money", min:0, max:1e7 },
+  { id:"a-age", key:"age", kind:"int", min:16, max:90 },
+  { id:"a-salary", key:"salary", kind:"money", min:0, max:1e8 },
+  { id:"a-savings", key:"savingsAdv", kind:"money", min:0, max:1e8, onSet: () => { state.savingsAuto = false; } },
+  { id:"a-capital", key:"capital", kind:"money", min:0, max:1e10 },
+  { id:"a-growth", key:"returnRate", kind:"pct", min:-10, max:40 },
+  { id:"a-cost", key:"costActive", kind:"money", min:0, max:1e7 },
+  { id:"a-pension", key:"pension", kind:"money", min:0, max:1e7 },
+  { id:"a-rente", key:"renteRate", kind:"pct", min:.5, max:20 },
+  { id:"a-infl", key:"inflation", kind:"pct", min:0, max:30 },
+  { id:"a-le", key:"lifeExp", kind:"int", min:50, max:115 },
+  { id:"a-margin", key:"marginYears", kind:"int", min:0, max:50 },
+  { id:"a-resA", key:"reserveActive", kind:"money", min:0, max:1e8 },
+  { id:"a-resR", key:"reserveRentier", kind:"money", min:0, max:1e8 },
+  { id:"a-sp", key:"statePension", kind:"money", min:0, max:1e6 },
+  { id:"a-spage", key:"statePensionAge", kind:"int", min:45, max:85 }
+];
+const RANGES = [["rg-age","age"],["rg-pension","pension"],["ra-age","age"],["ra-salary","salary"],["ra-growth","returnRate"],["ra-cost","costActive"],["ra-pension","pension"],["ra-rente","renteRate"],["ra-infl","inflation"]];
+const CHIPS = {
+  "chips-age":    { key:"age", items: () => [25,35,45,55].map(v => [v + " ans", v]), ticks:["ticks-age",18,70] },
+  "cha-age":      { key:"age", items: () => [25,35,45,55].map(v => [v + " ans", v]), ticks:["tka-age",18,70] },
+  "chips-pension":{ key:"pension", money:true, items: () => LV_COST.map((l,i) => [l, FR_COST[i]]), ticks:["ticks-pension",500,15000] },
+  "cha-salary":   { key:"salary", money:true, items: () => LV_SAL.map((l,i) => [l, ten(FR_SALARY[i] * activeCol())]), ticks:["tka-salary",500,15000] },
+  "cha-growth":   { key:"returnRate", items: () => [["Safe 3,5 %",3.5],["Initié 8 %",8],["Ambitieuse 12 %",12],["Agressif 20 %",20]], ticks:["tka-growth",0,25] },
+  "cha-cost":     { key:"costActive", money:true, items: () => LV_COST.map((l,i) => [l, ten(FR_COST[i] * activeCol())]), ticks:["tka-cost",300,12000] },
+  "cha-pension":  { key:"pension", money:true, items: () => LV_COST.map((l,i) => [l, ten(FR_COST[i] * retireCol())]), ticks:["tka-pension",500,15000] },
+  "cha-rente":    { key:"renteRate", items: () => [["Safe 3 %",3],["Initié 4,25 %",4.25],["Ambitieux 5,5 %",5.5],["Bien préparé 7 %",7]], ticks:["tka-rente",1,10] },
+  "cha-infl":     { key:"inflation", items: () => [["Faible 1 %",1],["Cible BCE 2 %",2],["Élevée 3,5 %",3.5],["Forte 5 %",5]], ticks:["tka-infl",0,10] }
+};
+function displayVal(f){
+  let v = +state[f.key];
+  if (f.key === "savingsAdv" && state.savingsAuto) v = Math.max(0, state.salary - state.costActive);
+  if (f.kind === "money") return nf0.format(Math.round(v * FX[state.currency]));
+  if (f.kind === "pct") return nf2.format(v);
+  return String(Math.round(v));
+}
+
+function buildPanelStatic(){
+  const sorted = [...COUNTRIES].sort((a,b) => a.name.localeCompare(b.name, "fr"));
+  const opts = sorted.map(c => `<option value="${c.code}">${esc(c.name)}</option>`).join("");
+  $("#a-active-country").innerHTML = opts;
+  $("#a-retire-country").innerHTML = opts;
+  for (const which of ["cost","pension"]){
+    $("#detail-" + which).innerHTML = CATS.map((c,k) => `<label for="d-${which}-${k}">${c}<input id="d-${which}-${k}" type="text" inputmode="numeric" autocomplete="off" data-detail="${which}" data-k="${k}"></label>`).join("") +
+      `<div class="tot"><span>Total mensuel</span><b id="dtot-${which}"></b></div>`;
+  }
+}
+
+function renderChips(){
+  for (const [id, cfg] of Object.entries(CHIPS)){
+    const el = document.getElementById(id); if (!el || el.closest("[hidden]")) continue;
+    const items = cfg.items();
+    const cur = +state[cfg.key];
+    el.innerHTML = items.map(([l, v]) => {
+      const on = cfg.money ? Math.round(cur) === Math.round(v) : Math.abs(cur - v) < 1e-6;
+      return `<button type="button" class="chip" data-act="set" data-key="${cfg.key}" data-val="${v}" aria-pressed="${on}">${esc(l)}</button>`;
+    }).join("");
+    const [tid, min, max] = cfg.ticks;
+    document.getElementById(tid).innerHTML = items.map(([, v]) => v >= min && v <= max ? `<i style="left:${((v - min) / (max - min) * 100).toFixed(2)}%"></i>` : "").join("");
+  }
+}
+
+function syncLoc(kind){
+  const code = state[kind + "Country"], city = state[kind + "City"], c = BY[code];
+  const cs = $(`#a-${kind}-country`); if (document.activeElement !== cs) cs.value = code;
+  $(`#lead-${kind}-country`).innerHTML = F(code);
+  $(`#box-${kind}-city`).hidden = !c.cities.length;
+  const sel = $(`#a-${kind}-city`);
+  if (sel.dataset.for !== code){
+    sel.innerHTML = `<option value="">Moyenne nationale</option>` + c.cities.map(ct => `<option value="${esc(ct.name)}">${esc(ct.name)}</option>`).join("");
+    sel.dataset.for = code;
+  }
+  sel.value = city || "";
+}
+function setLocation(kind, code, city){
+  const old = locCol(state[kind + "Country"], state[kind + "City"]);
+  state[kind + "Country"] = code; state[kind + "City"] = city || "";
+  const key = kind === "active" ? "costActive" : "pension";
+  state[key] = Math.round(state[key] * locCol(code, city) / old);
+}
+function syncDetail(which){
+  const key = which === "cost" ? "costActive" : "pension", wk = which === "cost" ? "costW" : "pensionW";
+  const open = !!state[which === "cost" ? "showCostDetail" : "showPensionDetail"];
+  $("#detail-" + which).hidden = !open;
+  $("#toggle-" + which).setAttribute("aria-expanded", String(open));
+  if (!open) return;
+  CATS.forEach((_, k) => { const el = document.getElementById(`d-${which}-${k}`); if (document.activeElement !== el) el.value = nf0.format(Math.round(state[key] * state[wk][k] * FX[state.currency])); });
+  $("#dtot-" + which).textContent = money(state[key]);
+}
+
+function syncPanel(p){
+  const adv = state.mode === "advanced";
+  $("#tab-simple").setAttribute("aria-selected", String(!adv));
+  $("#tab-adv").setAttribute("aria-selected", String(adv));
+  $("#pane-simple").hidden = adv;
+  $("#pane-adv").hidden = !adv;
+  document.querySelectorAll("#currency button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.cur === state.currency)));
+  document.querySelectorAll(".cur-sym").forEach(el => el.textContent = CUR_SYM[state.currency]);
+  for (const f of FIELDS){ const el = document.getElementById(f.id); if (el && document.activeElement !== el) el.value = displayVal(f); }
+  for (const [id, key] of RANGES){ const el = document.getElementById(id); if (document.activeElement !== el) el.value = Math.min(+el.max, Math.max(+el.min, +state[key])); }
+  document.querySelectorAll("[data-bool]").forEach(el => { el.checked = !!state[el.dataset.bool]; });
+  document.querySelectorAll("[data-show]").forEach(el => { el.hidden = !state[el.dataset.show]; });
+  document.querySelectorAll("[data-hide]").forEach(el => { el.hidden = !!state[el.dataset.hide]; });
+  renderChips();
+  $("#hyp").innerHTML = `<b>Hypothèses du mode simplifié :</b> vie active et retraite en France, rendement de <b>8 %/an</b> pendant l'accumulation, rente de <b>5,5 %/an</b> une fois rentier sans toucher au capital, hors inflation, espérance de vie de 85 ans et <b>pension d'État de ${money(1800)}/mois dès 64 ans</b>, comptée en bonus. Passe en <b>Avancé</b> pour tout régler.`;
+  if (!adv) return;
+  syncLoc("active"); syncLoc("retire");
+  const diff = state.salary - state.costActive;
+  const rate = state.salary > 0 ? p.savingsEff / state.salary : 0;
+  $("#sav-rate").innerHTML = state.savingsAuto && diff < 0 ? `<span class="neg">Tes dépenses dépassent ton salaire</span>` : `Taux d'épargne : <b>${Math.round(rate * 100)} %</b>`;
+  $("#sav-mode").innerHTML = state.savingsAuto ? "auto : salaire − dépenses" : `<button type="button" data-act="savings-auto">manuel · repasser en auto</button>`;
+  const LE = state.lifeCustom ? Math.round(state.lifeExp) : destination(state.retireCountry, state.retireCity).le;
+  $("#risk-consume").innerHTML = `⚠ <b>Option risquée :</b> consommer ton capital, ce n'est plus vraiment vivre de tes rentes. Ton patrimoine fond avec le temps : si tu vis plus longtemps que prévu ou si les marchés baissent, tu t'exposes à un <b>risque de ruine</b> à un âge avancé. Le calcul vise un capital épuisé à ${LE + 10} ans (espérance de vie + 10 ans).`;
+  $("#margin-note").textContent = `≈ ${money(state.marginYears * state.pension * 12)} de capital en plus (${plural(Math.round(state.marginYears), "an")} de dépenses). Tu pars un peu plus tard, mais ton capital continue de croître pendant la retraite.`;
+  $("#btn-estimate").textContent = `Estimer ≈ 40 % de mon salaire → ${money(state.salary * 0.4)}/mois`;
+  syncDetail("cost"); syncDetail("pension");
+}
+
+/* ---------- Rendu des résultats ---------- */
+function renderHero(p, d, res){
+  const el = $("#hero");
+  if (!res.reached){
+    const ratio = isFinite(res.T) && res.T > 0 ? Math.round(res.endCapital / res.T * 100) : 0;
+    el.innerHTML = `<p class="hero-kicker">En vivant ta retraite ${esc(d.where)}, avec ces paramètres, l'objectif reste hors d'atteinte</p>
+      <div class="hero-age"><span class="big txt">Pas avant ${res.H} ans</span></div>
+      <ul>
+        <li class="lead">Objectif : <b>${money(res.T)}</b> de capital investi pour une rente de <b>${money(res.net)}/mois net</b>.</li>
+        <li>À ${res.H} ans, ton capital atteindrait environ ${money(res.endCapital)}, soit ${ratio} % de l'objectif.</li>
+        <li>Pistes : épargner davantage, viser une destination moins chère (comparatif plus bas)${p.adv ? ", baisser la marge de sécurité ou accepter de consommer le capital" : " ou passer en mode Avancé"}.</li>
+      </ul>`;
+    return;
+  }
+  const when = res.n === 0 ? "c'est-à-dire dès maintenant" : `soit dans ${plural(res.n, "an")} (en ${res.year})`;
+  const keep = res.consume ? `<b>en consommant progressivement ton capital jusqu'à ${res.H} ans</b>` : `<b>sans jamais entamer ton capital</b>`;
+  const extras = [];
+  if (res.margin > 0) extras.push(`${money(res.margin)} de marge de sécurité`);
+  if (res.topUp > 0) extras.push(`${money(res.topUp)} de réserve de secours`);
+  const split = extras.length ? `, dont ${money(res.base)} pour la rente et ${extras.join(" et ")}` : "";
+  const inflLine = res.infl > 0 ? `<li class="small">Montants en euros d'aujourd'hui : l'inflation de ${pct(res.infl)} par an est déduite du taux de rente (rente réelle de ${pct(res.x)})${p.realAccum ? " et de la croissance de la phase active" : ""}.</li>` : "";
+  el.innerHTML = `<p class="hero-kicker">En vivant ta retraite ${esc(d.where)}, tu pourrais devenir rentier dès</p>
+    <div class="hero-age"><span class="big">${res.R} ans</span><span class="when">${when}</span></div>
+    <ul>
+      <li class="lead">Objectif : <span class="hl">${money(res.T)}</span> de capital investi${split}.</li>
+      <li>En continuant sur ce rythme (${money(p.savingsEff)}/mois investis à ${nf2.format(p.returnRate)} %/an), l'objectif est atteint à <b>${res.R} ans</b>, en ${res.year}, avec environ ${money(res.CR)} de capital.</li>
+      <li class="lead">Ce capital finance <b>${money(res.gross)}/mois brut → <span class="hl">${money(res.net)}/mois net</span></b> (fiscalité ${rangeTxt(d.tlo, d.thi)}, calcul à ${pct(res.tax)}) ${keep}, pour vivre ${esc(d.where)}.</li>
+      <li>Espérance de vie ${esc(prepName(d))} ≈ ${res.LE} ans : rentier à ${res.R} ans, tu profiterais d'environ <b>${plural(Math.max(0, res.LE - res.R), "an")}</b> de vie de rentier.</li>
+      ${inflLine}
+      <li class="small">Fiscalité ${esc(d.name)} : ${rangeTxt(d.tlo, d.thi)}${d.terr ? " 🌴" : ""}. ${esc(d.note)}</li>
+    </ul>`;
+}
+
+function renderElsewhere(p, d, res, rows){
+  const el = $("#elsewhere");
+  const ico = `<span class="ico" aria-hidden="true">↗</span>`;
+  const others = rows.filter(r => r.r.reached && r.d.code !== d.code).sort((a,b) => a.r.R - b.r.R || b.q - a.q);
+  if (!others.length){ el.innerHTML = `${ico}<p>Aucune autre destination de la liste ne permet d'atteindre l'objectif avec ces paramètres.</p>`; return; }
+  const best = others[0];
+  if (res.reached && best.r.R >= res.R){
+    el.innerHTML = `${ico}<p><b>Déjà parmi les plus rapides :</b> avec ce profil, vivre ${esc(d.where)} fait partie des options de la liste où tu deviens rentier le plus tôt. <a href="#world">Voir le comparatif</a></p>`;
+    return;
+  }
+  const faster = others.filter(r => !res.reached || r.r.R < res.R).slice(0, 5).map(r => esc(r.d.name)).join(", ");
+  const gain = res.reached ? res.R - best.r.R : 0;
+  el.innerHTML = `${ico}<p><b>Partir plus tôt ailleurs :</b> en vivant ta retraite dans un pays où la vie coûte moins cher, tu pourrais devenir rentier ${gain ? `jusqu'à <b>${plural(gain, "an")} plus tôt</b>, ` : ""}dès <b>${best.r.R} ans</b> (en ${best.r.year}). Par exemple : ${faster}. <a href="#world">Voir le tableau des pays</a></p>`;
+}
+
+function renderKpis(p, d, res){
+  $("#kpis").innerHTML = `
+    <div class="kpi"><div class="k">Capital cible à investir</div><div class="v">${money(res.T)}</div><div class="s">${res.reached ? `≈ ${money(res.CR)} atteints à ${res.R} ans` : "non atteint"}</div></div>
+    <div class="kpi"><div class="k">Rente brute / mois</div><div class="v">${money(res.gross)}</div><div class="s">avant impôt (${pct(res.tax)})</div></div>
+    <div class="kpi"><div class="k">Rente nette / mois</div><div class="v pos">${money(res.net)}</div><div class="s">pour vivre ${esc(d.where)}</div></div>
+    <div class="kpi"><div class="k">Âge potentiel de rentier</div><div class="v">${res.reached ? res.R + " ans" : "—"}</div><div class="s">${res.reached ? (res.n ? "dans " + plural(res.n, "an") : "dès maintenant") : "pas avant " + res.H + " ans"}</div></div>`;
+}
+
+function renderPension(p, d, res){
+  const el = $("#pension");
+  const ico = `<span class="ico" aria-hidden="true">+</span>`;
+  if (res.spNet <= 0){
+    el.innerHTML = `${ico}<p><b>Et ta pension d'État ?</b> ${p.noState ? "Tu as choisi de ne pas compter dessus : ton capital doit financer seul toute ta retraite, c'est l'hypothèse la plus prudente." : "Aucune pension n'est prise en compte : ton capital doit couvrir seul toute ta retraite."}</p>`;
+    return;
+  }
+  el.innerHTML = `${ico}<p><b>Et ta pension d'État ?</b> Le calcul vise une rente <b>100 % autonome</b>, sans compter sur l'État. À partir de ${res.spAge} ans, ta pension de ${money(res.spNet)}/mois s'ajoute à ta rente nette : tes revenus monteraient à <b class="pos">${money(res.net + res.spNet)}/mois</b>. En comptant sur ta pension dès le départ, l'objectif tomberait à ${money(res.tPension)}.</p>`;
+}
+
+/* ---------- Graphiques ---------- */
+let chart = null, incomeChart = null;
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+function chartColors(){ return { cap:cssVar("--cap"), fill:cssVar("--cap-fill"), goal:cssVar("--goal"), ret:cssVar("--retire"), more:cssVar("--more"), bad:cssVar("--bad"), act:cssVar("--act"), grid:cssVar("--grid"), muted:cssVar("--muted"), surface:cssVar("--surface") }; }
+const shortNum = v => nf0.format(Math.round(v * FX[state.currency]));
+const scaleOpts = (c, ytitle) => ({
+  x:{ title:{ display:true, text:"Âge", color:c.muted }, grid:{ color:c.grid }, ticks:{ color:c.muted, maxRotation:0, autoSkip:true, autoSkipPadding:6 } },
+  y:{ beginAtZero:true, title:{ display:true, text:ytitle, color:c.muted }, grid:{ color:c.grid }, ticks:{ color:c.muted, callback: v => shortNum(v), maxTicksLimit:7 } }
+});
+function drawChart(res){
+  const box = document.querySelector("#chart-card .chart-box");
+  if (!window.Chart){ box.innerHTML = `<div class="chart-fallback">Le graphique n'a pas pu se charger (bibliothèque indisponible).<br>Les résultats chiffrés restent valables.</div>`; return; }
+  const c = chartColors();
+  const labels = res.ages;
+  const goal = labels.map(() => isFinite(res.T) ? res.T : null);
+  const retire = labels.map(a => res.reached && a === res.R ? res.CR : null);
+  const exhaust = labels.map(a => res.exhaustedAt !== null && a === res.exhaustedAt ? 0 : null);
+  $("#lg-exhaust").hidden = res.exhaustedAt === null;
+  const datasets = [
+    { label:"Ton capital", data:res.capital, borderColor:c.cap, backgroundColor:c.fill, fill:"origin", tension:.25, pointRadius:0, pointHoverRadius:3, borderWidth:2.5, order:4 },
+    { label:"Objectif de capital", data:goal, borderColor:c.goal, borderDash:[6,5], borderWidth:1.6, pointRadius:0, pointHoverRadius:0, fill:false, order:3 },
+    { label:"Retraite anticipée", data:retire, borderColor:c.surface, backgroundColor:c.ret, pointRadius:7, pointHoverRadius:8, pointBorderWidth:2, showLine:false, order:0 },
+    { label:"Si tu continues d'investir", data:res.cont, borderColor:c.more, borderDash:[3,4], borderWidth:2, pointRadius:0, pointHoverRadius:3, fill:false, tension:.25, spanGaps:false, order:2 },
+    { label:"Capital épuisé", data:exhaust, borderColor:c.bad, backgroundColor:c.bad, pointStyle:"triangle", pointRadius:8, pointHoverRadius:9, showLine:false, order:1 }
+  ];
+  const ytitle = "Capital (" + CUR_SYM[state.currency] + ")";
+  if (chart){
+    chart.data.labels = labels;
+    chart.data.datasets.forEach((ds, i) => Object.assign(ds, datasets[i]));
+    chart.options.scales.y.title.text = ytitle;
+    chart.update("none");
+    return;
+  }
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  chart = new Chart($("#chart"), {
+    type:"line", data:{ labels, datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation: reduceMotion ? false : { duration:350 },
+      interaction:{ mode:"index", intersect:false },
+      plugins:{ legend:{ display:false },
+        tooltip:{ filter: it => it.raw !== null && it.raw !== undefined && it.datasetIndex !== 1,
+          callbacks:{ title: items => items.length ? items[0].label + " ans" : "", label: it => " " + it.dataset.label + " : " + money(it.raw) } } },
+      scales: scaleOpts(c, ytitle)
+    }
+  });
+}
+function drawIncome(p, res){
+  const card = $("#income-card");
+  card.hidden = !p.adv;
+  if (!p.adv || !window.Chart) return;
+  const c = chartColors();
+  const act = [], rente = [], pen = [], dep = [];
+  res.ages.forEach((a, k) => {
+    const working = !res.reached || a < res.R;
+    act.push(working ? p.salary : 0);
+    rente.push(working ? 0 : Math.max(0, res.capital[k] * Math.max(0, res.x) * (1 - res.tax) / 12));
+    pen.push(a >= res.spAge ? res.spNet : 0);
+    dep.push(working ? p.costActive : res.net);
+  });
+  const datasets = [
+    { type:"line", label:"Dépenses", data:dep, borderColor:c.bad, backgroundColor:c.bad, borderWidth:2, pointRadius:0, pointHoverRadius:3, stack:"dep", order:0, stepped:true },
+    { type:"bar", label:"Revenus d'activité", data:act, backgroundColor:c.act, stack:"inc", order:1, borderRadius:2 },
+    { type:"bar", label:"Rente du capital", data:rente, backgroundColor:c.cap, stack:"inc", order:1, borderRadius:2 },
+    { type:"bar", label:"Pension d'État", data:pen, backgroundColor:c.ret, stack:"inc", order:1, borderRadius:2 }
+  ];
+  const ytitle = CUR_SYM[state.currency] + " / mois";
+  if (incomeChart){
+    incomeChart.data.labels = res.ages;
+    incomeChart.data.datasets.forEach((ds, i) => Object.assign(ds, datasets[i]));
+    incomeChart.options.scales.y.title.text = ytitle;
+    incomeChart.update("none");
+    return;
+  }
+  const sc = scaleOpts(c, ytitle);
+  sc.x.stacked = true; sc.y.stacked = true;
+  incomeChart = new Chart($("#chart-income"), {
+    type:"bar", data:{ labels:res.ages, datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation: reduceMotion ? false : { duration:350 },
+      interaction:{ mode:"index", intersect:false },
+      plugins:{ legend:{ display:false },
+        tooltip:{ filter: it => it.raw > 0, callbacks:{ title: items => items.length ? items[0].label + " ans" : "", label: it => " " + it.dataset.label + " : " + money(it.raw) } } },
+      scales: sc
+    }
+  });
+}
+
+/* ---------- Comparatif pays ---------- */
+function rowFor(p, d){ const r = simulate(p, d, true); return { key: d.city ? d.code + "|" + d.city : d.code, d, r, q: (d.sun + d.safe + d.health) / 3 }; }
+function countryRows(p){ return (state.extended ? COUNTRIES : COUNTRIES.filter(c => c.featured)).map(c => rowFor(p, destination(c.code))); }
+function cityRows(p){ return COUNTRIES.filter(c => c.featured).flatMap(c => c.cities.length ? c.cities.map(ct => rowFor(p, destination(c.code, ct.name))) : [rowFor(p, destination(c.code))]); }
+const SORTERS = {
+  name:(a,b) => a.d.label.localeCompare(b.d.label, "fr"),
+  age:(a,b) => (a.r.reached ? a.r.R : 999) - (b.r.reached ? b.r.R : 999) || a.r.T - b.r.T,
+  net:(a,b) => a.r.net - b.r.net, gross:(a,b) => a.r.gross - b.r.gross, target:(a,b) => a.r.T - b.r.T,
+  tax:(a,b) => a.r.tax - b.r.tax || a.d.thi - b.d.thi, sun:(a,b) => a.d.sun - b.d.sun, safe:(a,b) => a.d.safe - b.d.safe, health:(a,b) => a.d.health - b.d.health
+};
+function tipFor(row){
+  const r = row.r, d = row.d;
+  return `${d.city ? d.city + " (" + d.name + ")" : d.name}\nRentier à ${r.reached ? r.R + " ans" : "—"} · rente nette ${money(r.net)}/mois\nQualité de vie ${nf2.format(row.q.toFixed(1))}/5 · fiscalité ${rangeTxt(d.tlo, d.thi)}`;
+}
+function renderScatter(rows, currentKey){
+  const plot = $("#plot");
+  plot.classList.toggle("city-mode", state.cityMode);
+  const qs = rows.map(r => r.q), ns = rows.map(r => r.r.net);
+  let qmin = Math.min(...qs), qmax = Math.max(...qs), nmin = Math.min(...ns), nmax = Math.max(...ns);
+  if (qmax - qmin < .01){ qmin -= .5; qmax += .5; }
+  if (nmax - nmin < 1){ nmin -= 100; nmax += 100; }
+  const X = q => 8 + (q - qmin) / (qmax - qmin) * 84;
+  const Y = v => 8 + (v - nmin) / (nmax - nmin) * 84;
+  let html = `<div class="quad q-tl"></div><div class="quad q-tr"></div><div class="quad q-bl"></div><div class="quad q-br"></div><div class="mid-v"></div><div class="mid-h"></div>`;
+  html += `<span class="ylab" style="top:8%">${money(nmin)}</span><span class="ylab" style="top:50%">${money((nmin + nmax) / 2)}</span><span class="ylab" style="top:92%">${money(nmax)}</span>`;
+  const ordered = [...rows].sort((a,b) => (a.key === currentKey) - (b.key === currentKey));
+  for (const row of ordered){
+    const cls = ["pt"]; if (row.key === currentKey) cls.push("is-current"); if (row.key === state.selected) cls.push("is-selected");
+    html += `<button type="button" class="${cls.join(" ")}" style="left:${X(row.q).toFixed(2)}%;top:${Y(row.r.net).toFixed(2)}%" data-act="pick" data-key="${esc(row.key)}" data-tip="${esc(tipFor(row))}" aria-label="${esc(row.d.label)}">${F(row.d.code)}</button>`;
+  }
+  plot.innerHTML = html;
+}
+function renderDetail(rows){
+  const el = $("#detail");
+  const row = state.selected && rows.find(r => r.key === state.selected);
+  if (!row){ el.innerHTML = ""; return; }
+  const r = row.r, d = row.d;
+  el.innerHTML = `<div class="detail">
+    <div class="detail-head">${F(d.code)}<h4>${esc(d.label)}</h4>${d.city ? `<span class="muted">${esc(d.name)}</span>` : ""}<button type="button" class="x" data-act="close-detail" aria-label="Fermer la fiche">×</button></div>
+    <dl>
+      <div><dt>Âge rentier</dt><dd>${r.reached ? r.R + " ans" : "—"}</dd></div>
+      <div><dt>Rente nette / mois</dt><dd>${money(r.net)}</dd></div>
+      <div><dt>Rente brute / mois</dt><dd>${money(r.gross)}</dd></div>
+      <div><dt>Capital cible</dt><dd>${money(r.T)}</dd></div>
+      <div><dt>Fiscalité</dt><dd>${rangeTxt(d.tlo, d.thi)}${d.terr ? " 🌴" : ""}</dd></div>
+      <div><dt>Soleil · sécurité · santé</dt><dd>${score(d.sun)} · ${score(d.safe)} · ${score(d.health)}</dd></div>
+    </dl>
+    <p>${esc(d.note)}</p>
+    <button type="button" class="btn-primary" data-act="simulate-here" data-key="${esc(row.key)}">Simuler ma retraite ici</button>
+  </div>`;
+}
+function renderTable(rows, currentKey, p){
+  const cols = [["name", state.cityMode ? "Ville" : "Pays"],["age","Âge rentier"],["net","Rente nette"],["gross","Rente brute"],["target","Capital cible"],["tax","Fiscalité"],["sun","☀️ Soleil"],["safe","🛡️ Sécurité"],["health","🩺 Santé"]];
+  const head = `<thead><tr>${cols.map(([k,l]) => {
+    const on = state.sortKey === k;
+    return `<th scope="col"><button type="button" class="sort" data-act="sort" data-sort="${k}" ${on ? `aria-sort="${state.sortDir > 0 ? "ascending" : "descending"}"` : ""}>${l}<span class="arr">${on ? (state.sortDir > 0 ? "↑" : "↓") : "↕"}</span></button></th>`;
+  }).join("")}</tr></thead>`;
+  const sorter = SORTERS[state.sortKey] || SORTERS.name;
+  const sorted = [...rows].sort((a,b) => sorter(a,b) * state.sortDir);
+  const cell = row => {
+    const r = row.r, d = row.d;
+    const ageTxt = r.reached ? `<b>${r.R} ans</b><span class="d">(+${r.n})</span>` : `<span class="d">non atteint</span>`;
+    const tax = `<span class="taxcell" tabindex="0" data-tip="${esc(d.name + " : " + d.note)}">${rangeTxt(d.tlo, d.thi)}</span>${d.terr ? '<span class="palm" aria-label="fiscalité territoriale">🌴</span>' : ""}`;
+    return `<td class="age">${ageTxt}</td><td class="c-net">${money(r.net)}</td><td class="c-gross ${r.tax > 0 ? "taxed" : "free"}">${money(r.gross)}</td><td>${money(r.T)}</td><td>${tax}</td><td>${score(d.sun)}</td><td>${score(d.safe)}</td><td>${score(d.health)}</td>`;
+  };
+  let body = "";
+  for (const row of sorted){
+    const d = row.d, isCur = row.key === currentKey;
+    if (state.cityMode){
+      body += `<tr class="${isCur ? "is-current" : ""}"><td><span class="cname">${F(d.code)}<span class="nm">${esc(d.label)}</span>${d.city ? `<span class="sub">${esc(d.name)}</span>` : ""}${isCur ? '<span class="badge">• choisi</span>' : ""}</span></td>${cell(row)}</tr>`;
+      continue;
+    }
+    const nC = BY[d.code].cities.length, open = !!state.expanded[d.code];
+    const childCur = currentKey.startsWith(d.code + "|");
+    const expBtn = nC ? `<button type="button" class="exp" data-act="expand" data-code="${d.code}" aria-expanded="${open}" aria-label="Voir les villes">▶</button>` : `<span class="exp-sp"></span>`;
+    body += `<tr class="${isCur || childCur ? "is-current" : ""}"><td><span class="cname">${expBtn}${F(d.code)}<span class="nm">${esc(d.name)}</span>${nC ? `<span class="sub">${plural(nC, "ville")}</span>` : ""}${isCur || childCur ? '<span class="badge">• choisi</span>' : ""}</span></td>${cell(row)}</tr>`;
+    if (nC && open){
+      for (const ct of BY[d.code].cities){
+        const cr = rowFor(p, destination(d.code, ct.name));
+        body += `<tr class="city${cr.key === currentKey ? " is-current" : ""}"><td>${esc(ct.name)}</td>${cell(cr)}</tr>`;
+      }
+    }
+  }
+  $("#tbl").innerHTML = head + `<tbody>${body}</tbody>`;
+}
+function renderWorld(p, d, res, cRows){
+  const lvl = bracket(p.pension / p.refCol);
+  $("#world-desc").innerHTML = `Même épargne, même rendement, même niveau de vie (rentier ${lvl}) : seuls le coût de la vie et la fiscalité changent. La fiscalité est un <b>encadrement indicatif</b> (calcul à la borne basse) qui dépend de ta situation, de ta résidence fiscale, de ton visa et du type de revenus. Les pays à <b>fiscalité territoriale</b> 🌴 demandent souvent bien moins de capital.`;
+  $("#btn-extended").setAttribute("aria-pressed", String(state.extended));
+  $("#btn-cities").setAttribute("aria-pressed", String(state.cityMode));
+  const rows = state.cityMode ? cityRows(p) : cRows;
+  const currentKey = d.city ? d.code + "|" + d.city : d.code;
+  if (state.selected && !rows.some(r => r.key === state.selected)) state.selected = null;
+  renderScatter(rows, currentKey);
+  renderDetail(rows);
+  renderTable(rows, currentKey, p);
+  const nMore = COUNTRIES.length - COUNTRIES.filter(c => c.featured).length;
+  $("#more-row").innerHTML = state.cityMode ? "" : `<button type="button" class="btn-ghost" data-act="extended">${state.extended ? "▲ Revenir à la sélection" : `▼ Plus de pays (${nMore})`}</button>`;
+}
+
+/* ---------- Fenêtre des taux ---------- */
+function renderTaxModal(){
+  const sorted = [...COUNTRIES].sort((a,b) => a.name.localeCompare(b.name, "fr"));
+  $("#tax-tbl").innerHTML = `<thead><tr><th scope="col" style="text-align:left;padding:8px">Pays</th><th scope="col" style="padding:8px">Fourchette</th><th scope="col" style="padding:8px">Ton taux</th></tr></thead><tbody>` +
+    sorted.map(c => { const o = state.taxOverrides[c.code]; return `<tr><td><span class="cname">${F(c.code)}<span>${esc(c.name)}</span></span></td><td>${rangeTxt(c.tlo, c.thi)}${c.terr ? " 🌴" : ""}</td><td><input type="text" inputmode="decimal" id="tax-${c.code}" data-tax="${c.code}" value="${o !== undefined ? esc(nf2.format(o)) : ""}" placeholder="${nf2.format(c.tlo)}" aria-label="Taux personnalisé ${esc(c.name)}"> %</td></tr>`; }).join("") + `</tbody>`;
+}
+function openTax(){ renderTaxModal(); $("#tax-modal").hidden = false; const first = $("#tax-tbl input"); if (first) first.focus(); }
+function closeTax(){ $("#tax-modal").hidden = true; }
+
+/* ---------- Boucle principale ---------- */
+let saveTimer = null;
+function save(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => store.set(KEY, state), 250); }
+function render(){
+  const p = effParams(state);
+  const d = destination(p.retireCountry, p.retireCity);
+  const res = simulate(p, d);
+  const cRows = countryRows(p);
+  syncPanel(p);
+  renderHero(p, d, res);
+  renderElsewhere(p, d, res, cRows);
+  renderKpis(p, d, res);
+  drawChart(res);
+  drawIncome(p, res);
+  renderPension(p, d, res);
+  renderWorld(p, d, res, cRows);
+  save();
+}
+
+/* ---------- Événements ---------- */
+function hideTip(){ const tt = document.getElementById("tt"); if (tt) tt.hidden = true; }
+function bind(){
+  for (const f of FIELDS){
+    const el = document.getElementById(f.id);
+    el.addEventListener("input", () => {
+      const n = parseNum(el.value); if (n === null) return;
+      let v = f.kind === "money" ? n / FX[state.currency] : n;
+      state[f.key] = Math.min(f.max, Math.max(f.min, v));
+      if (f.onSet) f.onSet();
+      render();
+    });
+    const fix = () => { el.value = displayVal(f); };
+    el.addEventListener("change", fix);
+    el.addEventListener("blur", fix);
+  }
+  for (const [id, key] of RANGES) document.getElementById(id).addEventListener("input", e => { state[key] = +e.target.value; render(); });
+  $("#a-active-country").addEventListener("change", e => { setLocation("active", e.target.value, ""); render(); });
+  $("#a-active-city").addEventListener("change", e => { setLocation("active", state.activeCountry, e.target.value); render(); });
+  $("#a-retire-country").addEventListener("change", e => { setLocation("retire", e.target.value, ""); render(); });
+  $("#a-retire-city").addEventListener("change", e => { setLocation("retire", state.retireCountry, e.target.value); render(); });
+  document.addEventListener("change", e => { const b = e.target.dataset && e.target.dataset.bool; if (b){ state[b] = e.target.checked; render(); } });
+  $("#pane-adv").addEventListener("input", e => {
+    const t = e.target; if (!t.dataset.detail) return;
+    const which = t.dataset.detail, k = +t.dataset.k;
+    const key = which === "cost" ? "costActive" : "pension", wk = which === "cost" ? "costW" : "pensionW";
+    const n = parseNum(t.value); if (n === null) return;
+    const amts = state[wk].map(w => w * state[key]);
+    amts[k] = Math.max(0, n / FX[state.currency]);
+    const tot = amts.reduce((s, v) => s + v, 0);
+    if (tot > 0){ state[wk] = amts.map(v => v / tot); state[key] = tot; }
+    render();
+  });
+  document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => { state.mode = b.dataset.mode; render(); }));
+  document.querySelectorAll("#currency button").forEach(b => b.addEventListener("click", () => { state.currency = b.dataset.cur; render(); }));
+
+  const reset = $("#btn-reset"); let armed = null;
+  reset.addEventListener("click", () => {
+    if (!armed){ reset.textContent = "Confirmer ?"; reset.classList.add("confirm"); armed = setTimeout(() => { armed = null; reset.textContent = "Réinitialiser"; reset.classList.remove("confirm"); }, 3000); return; }
+    clearTimeout(armed); armed = null; reset.textContent = "Réinitialiser"; reset.classList.remove("confirm");
+    const mode = state.mode; state = clone(DEFAULTS); state.mode = mode; render();
+  });
+
+  document.addEventListener("click", e => {
+    const t = e.target.closest("[data-act]"); if (!t) return;
+    const act = t.dataset.act;
+    if (act === "set"){ state[t.dataset.key] = +t.dataset.val; render(); }
+    else if (act === "sort"){ const k = t.dataset.sort; if (state.sortKey === k) state.sortDir *= -1; else { state.sortKey = k; state.sortDir = ["sun","safe","health"].includes(k) ? -1 : 1; } render(); }
+    else if (act === "expand"){ const c = t.dataset.code; state.expanded[c] = !state.expanded[c]; render(); }
+    else if (act === "extended"){ state.extended = !state.extended; if (state.extended) state.cityMode = false; render(); }
+    else if (act === "cities"){ state.cityMode = !state.cityMode; state.selected = null; render(); }
+    else if (act === "pick"){ state.selected = state.selected === t.dataset.key ? null : t.dataset.key; hideTip(); render(); }
+    else if (act === "close-detail"){ state.selected = null; render(); }
+    else if (act === "simulate-here"){
+      const [code, city] = t.dataset.key.split("|");
+      state.mode = "advanced"; setLocation("retire", code, city || ""); state.selected = null;
+      render(); $("#hero").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    }
+    else if (act === "savings-auto"){ state.savingsAuto = true; render(); }
+    else if (act === "toggle-detail"){ const k = t.dataset.which === "cost" ? "showCostDetail" : "showPensionDetail"; state[k] = !state[k]; render(); }
+    else if (act === "estimate-pension"){ state.statePension = Math.round(state.salary * 0.4); render(); }
+    else if (act === "open-tax") openTax();
+    else if (act === "close-tax") closeTax();
+    else if (act === "reset-tax"){ state.taxOverrides = {}; renderTaxModal(); render(); }
+  });
+  $("#tax-modal").addEventListener("input", e => {
+    const code = e.target.dataset.tax; if (!code) return;
+    const n = parseNum(e.target.value);
+    if (e.target.value.trim() === "" || n === null) delete state.taxOverrides[code];
+    else state.taxOverrides[code] = Math.min(95, Math.max(0, n));
+    render();
+  });
+  $("#tax-modal").addEventListener("click", e => { if (e.target.id === "tax-modal") closeTax(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape"){ if (!$("#tax-modal").hidden) closeTax(); hideTip(); } });
+
+  // Info-bulles
+  const tt = $("#tt");
+  const showTip = el => {
+    tt.textContent = el.dataset.tip; tt.hidden = false;
+    const r = el.getBoundingClientRect(), tw = tt.offsetWidth, th = tt.offsetHeight;
+    let x = r.left + r.width / 2 - tw / 2; x = Math.max(8, Math.min(window.innerWidth - tw - 8, x));
+    let y = r.top - th - 8; if (y < 8) y = r.bottom + 8;
+    tt.style.left = x + "px"; tt.style.top = y + "px";
+  };
+  document.addEventListener("mouseover", e => { const el = e.target.closest("[data-tip]"); if (el) showTip(el); });
+  document.addEventListener("mouseout", e => { const el = e.target.closest("[data-tip]"); if (el && !el.contains(e.relatedTarget)) hideTip(); });
+  document.addEventListener("focusin", e => { const el = e.target.closest("[data-tip]"); if (el) showTip(el); });
+  document.addEventListener("focusout", e => { if (e.target.closest("[data-tip]")) hideTip(); });
+  window.addEventListener("scroll", hideTip, { passive:true });
+
+  // Thème
+  const tbtn = $("#theme-toggle");
+  const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === "dark" : !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches); };
+  const syncTheme = () => { tbtn.setAttribute("aria-pressed", String(isDark())); if (chart){ chart.destroy(); chart = null; } if (incomeChart){ incomeChart.destroy(); incomeChart = null; } render(); };
+  const savedTheme = store.get(THEME_KEY);
+  if (savedTheme === "dark" || savedTheme === "light") document.documentElement.dataset.theme = savedTheme;
+  tbtn.setAttribute("aria-pressed", String(isDark()));
+  tbtn.addEventListener("click", () => { const next = isDark() ? "light" : "dark"; document.documentElement.dataset.theme = next; store.set(THEME_KEY, next); syncTheme(); });
+  if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (!document.documentElement.dataset.theme) syncTheme(); });
+}
+
+buildPanelStatic();
+bind();
+render();
+</script>
+
+</body>
+</html>
