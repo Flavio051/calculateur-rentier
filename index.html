@@ -505,7 +505,7 @@ tr.city td:first-child{padding-left:42px}
         </div>
 
         <div class="opt">
-          <div class="opt-head"><label class="check"><input type="checkbox" id="chk-res" data-bool="reservesOn"><span>Prévoir des <b>réserves de secours</b> (cash hors investissement)</span></label><i class="tip" tabindex="0" data-tip="Épargne de précaution en cash. Celle de la phase active est déjà constituée ; à la retraite, le complément pour atteindre la réserve de rentier est ajouté à l'objectif puis sorti du portefeuille.">i</i></div>
+          <div class="opt-head"><label class="check"><input type="checkbox" id="chk-res" data-bool="reservesOn"><span>Prévoir des <b>réserves de secours</b> (cash hors investissement)</span></label><i class="tip" tabindex="0" data-tip="Épargne de précaution en cash, à garder à part. Elle ne change pas l'objectif de capital investi : c'est un coussin en plus.">i</i></div>
           <div class="sub" data-show="reservesOn">
             <div class="field">
               <label for="a-resA"><span class="buoy" aria-hidden="true"></span>Réserve de la phase active</label>
@@ -760,7 +760,7 @@ const locCol = (code, city) => destination(code, city).col;
 // Hypothèses figées du mode simplifié
 const SIMPLE_HYP = { activeCountry:"FR", activeCity:"", retireCountry:"FR", retireCity:"", returnRate:8, renteRate:5.5,
   inflationOn:false, realAccum:false, lifeCustom:true, lifeExp:85, consume:false, marginOn:false, reservesOn:false,
-  noState:false, statePension:1800, statePensionAge:64 };
+  noState:false, statePension:1800 };
 const DEFAULT_LE = 85;   // espérance de vie retenue par défaut, quel que soit le pays
 const MIN_SAVINGS = 150; // épargne minimale retenue en mode auto, comme l'original
 function effParams(s){
@@ -777,9 +777,11 @@ function annuity(x, N){ if (N <= 0) return 0; if (Math.abs(x) < 1e-9) return N; 
 
 // Moteur
 // Phase active : capital = (capital + 12 × épargne) × (1 + croissance), versements en début d'année.
-// Cible : rente brute annuelle ÷ (taux de rente − inflation), ou annuité jusqu'à espérance de vie + 10 ans si le capital est consommé,
-//         + marge de sécurité (années de dépenses nettes) + complément de réserve de secours.
-// Phase rentier : capital × (1 + taux de rente − inflation) − retraits ; la pension d'État réduit les retraits dès son âge de versement.
+// Objectif : rente brute annuelle ÷ (taux de rente − inflation), ou annuité jusqu'à espérance de vie + 10 ans si le capital est consommé.
+// Pension d'État : déjà versée → l'objectif ne finance que le complément ; versée dans 5 ans ou moins → le capital fait la jonction
+// (plein jusqu'à la pension, complément ensuite, en valeur actualisée) ; plus loin → rente 100 % autonome.
+// + marge de sécurité (années de dépenses nettes). Les réserves de secours sont du cash à part, hors capital investi.
+const BRIDGE_MAX_YEARS = 5;
 function simulate(p, d, lite){
   const net = p.pension * d.col / p.refCol;               // même train de vie, ramené au coût de la vie local
   const tax = taxRate(d, p);
@@ -788,46 +790,68 @@ function simulate(p, d, lite){
   const infl = p.inflationOn ? (+p.inflation || 0) / 100 : 0;
   const x = p.renteRate / 100 - infl;                      // rente réelle
   const gA = p.returnRate / 100 - (p.realAccum ? infl : 0);
-  const age = Math.round(+p.age);
-  const LE = Math.max(age + 1, Math.round(p.lifeCustom ? +p.lifeExp : DEFAULT_LE));
-  const H = p.consume ? LE + 10 : LE;                      // horizon d'épuisement ou de projection
+  const age = Math.max(0, Math.floor(+p.age || 0));
+  const LE = Math.round(p.lifeCustom ? +p.lifeExp : DEFAULT_LE);
+  const consume = !!p.consume;
   const spNet = p.noState ? 0 : Math.max(0, +p.statePension || 0);
   const spAge = Math.round(+p.statePensionAge || 64);
   const grossAfter = Math.max(0, net - spNet) / (1 - tax);
-  const Wa = a => 12 * (a >= spAge ? grossAfter : gross);
+  const Wa = 12 * grossAfter;
   const margin = p.marginOn ? Math.max(0, +p.marginYears || 0) * net * 12 : 0;
-  const topUp = p.reservesOn ? Math.max(0, (+p.reserveRentier || 0) - (+p.reserveActive || 0)) : 0;
-  const base = (annual, R) => p.consume ? annual * annuity(x, H - R) : (x > 0 ? annual / x : (annual > 0 ? Infinity : 0));
-  // Si tu deviens rentier après l'âge de la pension, elle est déjà versée : l'objectif n'a plus à la remplacer.
-  const annualAt = R => 12 * (R >= spAge ? grossAfter : gross);
-  const target = R => base(annualAt(R), R) + margin + topUp;
+  const reserve = p.reservesOn ? Math.max(0, +p.reserveRentier || 0) : 0;
+  // Capital investi nécessaire pour verser « annual » brut par an à partir de l'âge « at »
+  const need = (annual, at) => {
+    if (!(annual > 0)) return 0;
+    if (!consume) return x > 0 ? annual / x : Infinity;
+    const N = Math.max(1, Math.round(LE + 10 - at));
+    return Math.abs(x) < 1e-6 ? annual * N : annual * (1 - Math.pow(1 + x, -N)) / x;
+  };
+  const fullAt = R => need(W, R);
+  const baseAt = R => {
+    const full = fullAt(R);
+    if (!(spNet > 0)) return full;
+    const gap = spAge - R;
+    if (gap <= 0) return need(Wa, R);
+    if (gap > BRIDGE_MAX_YEARS) return full;
+    const atPension = need(Wa, spAge);
+    const f = Math.abs(x) < 1e-6 ? atPension + W * gap : atPension / Math.pow(1 + x, gap) + W * (1 - Math.pow(1 + x, -gap)) / x;
+    return isFinite(f) ? Math.min(full, Math.max(0, f)) : full;
+  };
+  const target = R => baseAt(R) + margin;
+  const maxAge = Math.min(100, age + 60);
   let C = Math.max(0, +p.capital || 0), n = 0;
   const S = Math.max(0, +p.savingsEff || 0) * 12;
   const capital = [C];
   let T = target(age);
-  while (C < T && age + n < H - 1){ C = (C + S) * (1 + gA); n++; capital.push(C); T = target(age + n); }
+  while (C < T && age + n < maxAge){ C = (C + S) * (1 + gA); n++; capital.push(C); T = target(age + n); }
   const reached = C >= T;
   const R = age + n;
-  const out = { net, gross, tax, W, grossAfter, T, base: base(annualAt(R), R), margin, topUp, R, n, year: NOW_YEAR + n, reached, CR: C,
-    LE, H, x, gA, infl, spNet, spAge, consume: !!p.consume, tPension: base(12 * grossAfter, R) };
+  const gapToPension = spAge - R;
+  const bridged = reached && spNet > 0 && gapToPension > 0 && gapToPension <= BRIDGE_MAX_YEARS && baseAt(R) < fullAt(R) - 0.5;
+  const at = reached ? R : age;
+  const out = { net, gross, tax, W, grossAfter, T: reached ? T : target(age), base: baseAt(at), margin, reserve, R, n, year: NOW_YEAR + n, reached, CR: C,
+    LE, H: LE + 10, x, gA, infl, spNet, spAge, consume, bridged, fullT: fullAt(at) + margin, tPension: need(Wa, at) };
   if (lite) return out;
+  const end = reached ? Math.min(100, consume ? LE + 10 : Math.max(LE, R + 20)) : Math.min(maxAge, age + 40);
   const ages = [];
-  for (let a = age; a <= H; a++) ages.push(a);
+  for (let a = age; a <= Math.max(end, R); a++) ages.push(a);
+  const last = ages[ages.length - 1];
   let exhaustedAt = null;
   if (reached){
-    let X = C - topUp;
-    for (let a = R; a < H; a++){ X = X * (1 + x) - Wa(a); if (X <= 0){ if (exhaustedAt === null) exhaustedAt = a + 1; X = 0; } capital.push(X); }
+    let X = C;
+    for (let a = R; a < last; a++){ X = X * (1 + x) - 12 * (a >= spAge ? grossAfter : gross); if (X <= 0){ if (exhaustedAt === null) exhaustedAt = a + 1; X = 0; } capital.push(X); }
   } else {
     let X = C;
-    for (let a = R; a < H; a++){ X = (X + S) * (1 + gA); capital.push(X); }
+    for (let a = R; a < last; a++){ X = (X + S) * (1 + gA); capital.push(X); }
   }
+  capital.length = ages.length;
   const cont = ages.map(() => null);
   if (reached){
     const maxMain = Math.max(...capital);
     const cap = Math.max(maxMain, (isFinite(T) ? T : 0) * 1.6);
     let Y = C;
     cont[R - age] = Y;
-    for (let a = R + 1; a <= H && a <= R + 15; a++){ Y = (Y + S) * (1 + gA); if (Y > cap) break; cont[a - age] = Y; }
+    for (let a = R + 1; a <= last && a <= R + 15; a++){ Y = (Y + S) * (1 + gA); if (Y > cap) break; cont[a - age] = Y; }
   }
   return { ...out, ages, capital, cont, exhaustedAt, endCapital: capital[capital.length - 1] };
 }
@@ -1097,19 +1121,18 @@ function renderHero(p, d, res){
   if (!res.reached){
     const ratio = isFinite(res.T) && res.T > 0 ? Math.round(res.endCapital / res.T * 100) : 0;
     el.innerHTML = `<p class="hero-kicker">En vivant ta retraite ${esc(d.where)}, avec ces paramètres, l'objectif reste hors d'atteinte</p>
-      <div class="hero-age"><span class="big txt">Pas avant ${res.H} ans</span></div>
+      <div class="hero-age"><span class="big txt">Pas avant ${res.R} ans</span></div>
       <ul>
         <li class="lead">Objectif : <b>${money(res.T)}</b> de capital investi pour une rente de <b>${money(res.net)}/mois net</b>.</li>
-        <li>À ${res.H} ans, ton capital atteindrait environ ${money(res.endCapital)}, soit ${ratio} % de l'objectif.</li>
+        <li>À ${res.R} ans, ton capital atteindrait environ ${money(res.CR)}, soit ${isFinite(res.T) && res.T > 0 ? Math.round(res.CR / res.T * 100) : 0} % de l'objectif.</li>
         <li>Pistes : épargner davantage, viser une destination moins chère (comparatif plus bas)${p.adv ? ", baisser la marge de sécurité ou accepter de consommer le capital" : " ou passer en mode Avancé"}.</li>
       </ul>`;
     return;
   }
   const when = res.n === 0 ? "c'est-à-dire dès maintenant" : `soit dans ${plural(res.n, "an")} (en ${res.year})`;
-  const keep = res.consume ? `<b>en consommant progressivement ton capital jusqu'à ${res.H} ans</b>` : `<b>sans jamais entamer ton capital</b>`;
+  const keep = res.consume ? `<b>en consommant progressivement ton capital jusqu'à ${res.H} ans</b>` : (res.bridged ? `<b>en puisant dans ton capital jusqu'à ta pension à ${res.spAge} ans, puis sans l'entamer</b>` : `<b>sans jamais entamer ton capital</b>`);
   const extras = [];
   if (res.margin > 0) extras.push(`${money(res.margin)} de marge de sécurité`);
-  if (res.topUp > 0) extras.push(`${money(res.topUp)} de réserve de secours`);
   const split = extras.length ? `, dont ${money(res.base)} pour la rente et ${extras.join(" et ")}` : "";
   const inflLine = res.infl > 0 ? `<li class="small">Montants en euros d'aujourd'hui : l'inflation de ${pct(res.infl)} par an est déduite du taux de rente (rente réelle de ${pct(res.x)})${p.realAccum ? " et de la croissance de la phase active" : ""}.</li>` : "";
   el.innerHTML = `<p class="hero-kicker">En vivant ta retraite ${esc(d.where)}, tu pourrais devenir rentier dès</p>
@@ -1120,6 +1143,7 @@ function renderHero(p, d, res){
       <li class="lead">Ce capital finance <b>${money(res.gross)}/mois brut → <span class="hl">${money(res.net)}/mois net</span></b> (fiscalité ${rangeTxt(d.tlo, d.thi)}, calcul à ${pct(res.tax)}) ${keep}, pour vivre ${esc(d.where)}.</li>
       <li>Espérance de vie ${esc(prepName(d))} ≈ ${res.LE} ans : rentier à ${res.R} ans, tu profiterais d'environ <b>${plural(Math.max(0, res.LE - res.R), "an")}</b> de vie de rentier.</li>
       ${inflLine}
+      ${res.reserve > 0 ? `<li class="small">Prévois aussi ${money(res.reserve)} de réserve de secours en cash, à part du capital investi.</li>` : ""}
       <li class="small">Fiscalité ${esc(d.name)} : ${rangeTxt(d.tlo, d.thi)}${d.terr ? " 🌴" : ""}. ${esc(d.note)}</li>
     </ul>`;
 }
@@ -1144,7 +1168,7 @@ function renderKpis(p, d, res){
     <div class="kpi"><div class="k">Capital cible à investir</div><div class="v">${money(res.T)}</div><div class="s">${res.reached ? `≈ ${money(res.CR)} atteints à ${res.R} ans` : "non atteint"}</div></div>
     <div class="kpi"><div class="k">Rente brute / mois</div><div class="v">${money(res.gross)}</div><div class="s">avant impôt (${pct(res.tax)})</div></div>
     <div class="kpi"><div class="k">Rente nette / mois</div><div class="v pos">${money(res.net)}</div><div class="s">pour vivre ${esc(d.where)}</div></div>
-    <div class="kpi"><div class="k">Âge potentiel de rentier</div><div class="v">${res.reached ? res.R + " ans" : "—"}</div><div class="s">${res.reached ? (res.n ? "dans " + plural(res.n, "an") : "dès maintenant") : "pas avant " + res.H + " ans"}</div></div>`;
+    <div class="kpi"><div class="k">Âge potentiel de rentier</div><div class="v">${res.reached ? res.R + " ans" : "—"}</div><div class="s">${res.reached ? (res.n ? "dans " + plural(res.n, "an") : "dès maintenant") : "pas avant " + res.R + " ans"}</div></div>`;
 }
 
 function renderPension(p, d, res){
@@ -1152,6 +1176,10 @@ function renderPension(p, d, res){
   const ico = `<span class="ico" aria-hidden="true">+</span>`;
   if (res.spNet <= 0){
     el.innerHTML = `${ico}<p><b>Et ta pension d'État ?</b> ${p.noState ? "Tu as choisi de ne pas compter dessus : ton capital doit financer seul toute ta retraite, c'est l'hypothèse la plus prudente." : "Aucune pension n'est prise en compte : ton capital doit couvrir seul toute ta retraite."}</p>`;
+    return;
+  }
+  if (res.bridged){
+    el.innerHTML = `${ico}<p><b>Et ta pension d'État ?</b> Tu pars ${plural(res.spAge - res.R, "an")} avant ta pension : ton capital finance tout ton train de vie jusqu'à ${res.spAge} ans, puis ta pension de ${money(res.spNet)}/mois prend le relais. L'objectif en tient compte. Pour une rente 100 % autonome, il faudrait ${money(res.fullT)}.</p>`;
     return;
   }
   if (res.reached && res.R >= res.spAge){
