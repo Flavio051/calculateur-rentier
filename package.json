@@ -1,0 +1,15 @@
+{
+  "name": "calculateur-rentier",
+  "private": true,
+  "description": "Simulateur d'âge rentier (site statique index.html) et ses contrôles automatiques",
+  "scripts": {
+    "test": "node tests/moteur.test.mjs && node tests/page.test.mjs",
+    "test:moteur": "node tests/moteur.test.mjs",
+    "test:page": "node tests/page.test.mjs",
+    "prepare": "git config core.hooksPath .githooks || true"
+  },
+  "devDependencies": {
+    "chart.js": "4.4.1",
+    "playwright": "1.56.0"
+  }
+}

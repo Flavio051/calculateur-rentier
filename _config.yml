@@ -1,0 +1,8 @@
+# Publication « Deploy from a branch » : seule la page est mise en ligne, pas les outils de test.
+exclude:
+  - tests
+  - node_modules
+  - package.json
+  - package-lock.json
+  - README.md
+  - CLAUDE.md

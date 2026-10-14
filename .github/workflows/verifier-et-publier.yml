@@ -1,0 +1,76 @@
+name: Vérifier et publier
+
+# À chaque push : les contrôles tournent sur GitHub (coche verte ou croix rouge sur le commit).
+# Si la source de GitHub Pages est « GitHub Actions » (Settings → Pages), le site n'est
+# publié QUE si les contrôles passent. Avec la source « Deploy from a branch », GitHub publie
+# la branche main comme avant et ce workflow sert de vérification visible.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  controles:
+    name: Contrôles (parité Gui Storm + page)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+
+  source:
+    name: Source de publication
+    needs: controles
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: read
+    outputs:
+      mode: ${{ steps.lire.outputs.mode }}
+    steps:
+      - id: lire
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mode=$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq .build_type 2>/dev/null || echo inconnu)
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          if [ "$mode" = "workflow" ]; then
+            echo "Source GitHub Pages : GitHub Actions → publication par ce workflow."
+          else
+            echo "::notice title=Publication::Source GitHub Pages = « $mode » : GitHub publie la branche main lui-même. Pour que le site ne soit publié qu'après des contrôles réussis, choisir « GitHub Actions » dans Settings → Pages."
+          fi
+
+  publier:
+    name: Publier le site
+    needs: source
+    if: needs.source.outputs.mode == 'workflow'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: mkdir _site && cp index.html _site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploiement
+        uses: actions/deploy-pages@v4

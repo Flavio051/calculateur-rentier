@@ -1,0 +1,24 @@
+#!/bin/sh
+# Verrou avant push : rien ne part sur GitHub si les contrôles ne passent pas.
+# Activé par « npm install » (script prepare) ou : git config core.hooksPath .githooks
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+# On teste exactement ce qui est poussé : pas de modification non commitée sur les fichiers suivis
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  echo "✗ Push bloqué : des modifications ne sont pas commitées (le test porterait sur une autre version que celle poussée)."
+  git status --short --untracked-files=no
+  exit 1
+fi
+
+if [ ! -d node_modules/playwright ] || [ ! -d node_modules/chart.js ]; then
+  echo "Installation des outils de test…"
+  npm ci --no-audit --no-fund >/dev/null || { echo "✗ npm ci a échoué"; exit 1; }
+fi
+
+echo "Contrôles avant push (parité Gui Storm + page dans un navigateur)…"
+if ! npm test --silent; then
+  echo ""
+  echo "✗ Push bloqué : corrige les problèmes ci-dessus avant de publier."
+  exit 1
+fi
+echo "✓ Contrôles OK, push autorisé."
