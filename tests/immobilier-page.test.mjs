@@ -1,6 +1,6 @@
 // Contrôle 2 : Bilan Locatif dans un vrai navigateur (Chromium)
 // Chargement sans erreur, indicateurs identiques au moteur, saisie, sauvegarde, simulations, export/import,
-// estimations des champs vides (repères), défilement du formulaire, mobile.
+// nouvelle simulation (surface, prix, loyer à remplir ; repères standards pour le reste), défilement du formulaire, mobile.
 // Lancement : node tests/page.test.mjs   (nécessite Playwright et Chart.js dans node_modules)
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -113,43 +113,46 @@ try {
   verif(p.erreurs.length === 0, "aucune erreur JavaScript (ordinateur)", p.erreurs.slice(0, 3).join(" | "));
   await p.context().close();
 
-  // 8. Nouvelle simulation : champs vides, valeurs estimées en gris, repères cliquables
+  // 8. Nouvelle simulation : surface, prix et loyer à remplir soi-même, repères standards (en gris, cliquables) pour le reste
   {
     const q = await page(1440, 900);
     await q.click("#btn-new"); await q.waitForTimeout(60);
     const nv = o => Object.assign(JSON.parse(JSON.stringify(E.NOUVELLE_SIM)), o);
-    verif(await q.inputValue("#f-surface") === "" && (await q.getAttribute("#f-surface", "placeholder")) !== "" && await q.$eval("#f-surface", e => e.closest(".inp").classList.contains("est")),
-      "nouvelle simulation : surface vide, estimation en gris marquée « estimé »");
-    await q.fill("#t-ville", "Reims (51)"); await q.waitForTimeout(80);
-    const Rr = E.simuler(nv({ ville: "Reims (51)" }));
-    verif((await texte(q, "#market")).includes("Reims (51)") && await q.$eval("#fld-dept", e => e.hidden), "ville reconnue : encadré du marché de Reims, département inutile");
-    verif(!(await q.$eval("#estbar", e => e.hidden)) && (await texte(q, "#estbar")).includes("Reims (51)"), "bandeau « Résultat estimé » affiché");
-    verif(await texte(q, "#k-v1") === norm(eur(Rr.Y[1].cf) + " / an"), "résultat estimé identique au moteur", await texte(q, "#k-v1"));
-    await q.click('#estbar [data-goto="loyer"]'); await q.waitForTimeout(80);
-    verif(await q.evaluate(() => document.activeElement && document.activeElement.id) === "f-loyer", "bandeau : clic sur « Loyer » → champ du loyer");
-    verif(await q.inputValue("#f-loyer") === "" && chiffres(await q.getAttribute("#f-loyer", "placeholder")) === String(Math.round(Rr.s.loyer)), "loyer vide, loyer de marché en gris (" + Math.round(Rr.s.loyer) + " €)");
-    const chips = await q.$$eval('[data-tiers="loyer"] .tier', l => l.map(b => +b.dataset.v));
-    verif(chips.length === 3 && chips[0] < chips[1] && chips[1] < chips[2], "trois repères de loyer croissants", chips.join(" / "));
-    await q.click('[data-tiers="loyer"] .tier'); await q.waitForTimeout(60);
-    const Rp = E.simuler(nv({ ville: "Reims (51)", loyer: chips[0] }));
-    verif(chiffres(await q.inputValue("#f-loyer")) === String(chips[0]) && await texte(q, "#k-v1") === norm(eur(Rp.Y[1].cf) + " / an"), "clic sur le repère « Prudent » : loyer rempli et résultat recalculé");
-    await q.fill("#f-loyer", ""); await q.locator("#f-loyer").blur(); await q.waitForTimeout(60);
-    verif(await q.inputValue("#f-loyer") === "" && await texte(q, "#k-v1") === norm(eur(Rr.Y[1].cf) + " / an"), "champ vidé : retour à l'estimation");
-    await q.fill("#f-loyer", String(Rr.s.loyer)); await q.waitForTimeout(60);
-    verif(await texte(q, "#k-v1") === norm(eur(Rr.Y[1].cf) + " / an"), "taper l'estimation ne change pas le résultat");
-    await q.fill("#f-loyer", ""); await q.waitForTimeout(40);
-    await q.click('[data-sec="bien"]'); await q.fill("#t-ville", "Trifouilly-les-Oies"); await q.waitForTimeout(60);
-    verif(!(await q.$eval("#fld-dept", e => e.hidden)), "ville inconnue : choix du département proposé");
-    await q.selectOption("#s-dept", "23"); await q.waitForTimeout(60);
-    verif((await texte(q, "#market")).includes("Creuse"), "département choisi : repères de la Creuse");
-    await q.reload(); await q.waitForSelector("#k-v1"); await q.click('[data-sec="expl"]');
-    verif(await q.inputValue("#f-loyer") === "" && (await q.getAttribute("#f-loyer", "placeholder")) !== "", "après rechargement, le loyer reste vide (estimé)");
+    verif(await q.$eval("#estbar", e => !e.hidden && e.classList.contains("manque")) && (await q.$$("#estbar [data-goto]")).length === 3, "nouvelle simulation : bandeau « Il manque 3 chiffres »");
+    verif(await texte(q, "#k-v1") === "—" && !!(await q.$("#ana .attente")), "rien n'est calculé tant que surface, prix et loyer manquent");
+    verif(await q.inputValue("#f-surface") === "" && (await q.getAttribute("#f-surface", "placeholder")) === "" && await q.$eval("#f-surface", e => e.closest(".inp").classList.contains("req")), "surface vide, marquée « à remplir », aucun chiffre inventé");
+    verif(await q.$$eval("#aide a", l => l.map(a => a.href).join(" ")).then(t => t.includes("explore.data.gouv.fr/immobilier") && t.includes("carte-loyers")), "aide : liens vers l'explorateur DVF et la carte des loyers");
+    await q.fill("#t-ville", "Paris 11e"); await q.waitForTimeout(60);
+    verif((await texte(q, "#aide")).includes("Loyers encadrés"), "Paris : rappel de l'encadrement des loyers");
+    await q.click('#estbar [data-goto="prix"]'); await q.waitForTimeout(60);
+    verif(await q.evaluate(() => document.activeElement && document.activeElement.id) === "f-prix-b", "bandeau : clic sur « Prix » → champ du prix");
+    await q.fill("#f-surface", "30"); await q.fill("#f-prix-b", "280000"); await q.waitForTimeout(60);
+    verif((await texte(q, "#ana .attente h3")).includes("un chiffre") && await texte(q, "#k-v1") === "—", "deux chiffres sur trois : il manque encore le loyer");
+    await q.fill("#f-loyer-b", "1000"); await q.waitForTimeout(80);
+    const o = { ville: "Paris 11e", surface: 30, prix: 280000, loyer: 1000 }, Rp = E.simuler(nv(o));
+    verif(await texte(q, "#k-v1") === norm(eur(Rp.Y[1].cf) + " / an") && !!(await q.$("#syn-v")), "les trois chiffres remplis : bilan identique au moteur", await texte(q, "#k-v1"));
+    verif(await q.$eval("#estbar", e => !e.classList.contains("manque")) && (await texte(q, "#estbar")).includes("repères standards"), "bandeau : chiffres venant de repères standards");
+    await q.click('[data-sec="charges"]'); await q.waitForTimeout(60);
+    verif(await q.inputValue("#f-ch-tf") === "" && chiffres(await q.getAttribute("#f-ch-tf", "placeholder")) === String(Math.round(Rp.s.tf.v)), "taxe foncière vide, repère en gris (" + Math.round(Rp.s.tf.v) + " €)");
+    const chips = await q.$$eval('[data-tiers="tf.v"] .tier', l => l.map(b => +b.dataset.v));
+    verif(chips.length === 3 && chips[0] < chips[1] && chips[1] < chips[2], "trois repères de taxe foncière croissants", chips.join(" / "));
+    await q.click('[data-tiers="tf.v"] .tier'); await q.waitForTimeout(60);
+    const Rb = E.simuler(nv(Object.assign({}, o, { tf: { mode: "an", v: chips[0] } })));
+    verif(chiffres(await q.inputValue("#f-ch-tf")) === String(chips[0]) && await texte(q, "#k-v1") === norm(eur(Rb.Y[1].cf) + " / an"), "clic sur un repère : champ rempli et résultat recalculé");
+    await q.fill("#f-ch-tf", ""); await q.locator("#f-ch-tf").blur(); await q.waitForTimeout(60);
+    verif(await q.inputValue("#f-ch-tf") === "" && await texte(q, "#k-v1") === norm(eur(Rp.Y[1].cf) + " / an"), "champ vidé : retour au repère");
+    await q.fill("#f-ch-tf", String(Rp.s.tf.v)); await q.waitForTimeout(60);
+    verif(await texte(q, "#k-v1") === norm(eur(Rp.Y[1].cf) + " / an"), "taper le repère ne change pas le résultat");
+    await q.fill("#f-ch-tf", ""); await q.waitForTimeout(40);
+    await q.reload(); await q.waitForSelector("#k-v1"); await q.click('[data-sec="charges"]');
+    verif(await q.inputValue("#f-ch-tf") === "" && (await q.getAttribute("#f-ch-tf", "placeholder")) !== "" && await texte(q, "#k-v1") === norm(eur(Rp.Y[1].cf) + " / an"), "après rechargement : chiffres saisis gardés, repères toujours en gris");
     await q.click('[data-mode="rapide"]'); await q.waitForTimeout(40);
-    await q.fill("#t-ville", "Paris 15e"); await q.waitForTimeout(80);
-    const Rq = E.simuler(nv({ ville: "Paris 15e", mode: "rapide" }));
-    verif(chiffres(await texte(q, '[data-live="notaire"]')) === chiffres(eur(Rq.notaire.total)), "estimation rapide : frais de notaire mis à jour avec la ville", await texte(q, '[data-live="notaire"]'));
+    const Rq = E.simuler(nv(Object.assign({}, o, { mode: "rapide" })));
+    verif(chiffres(await texte(q, '[data-live="notaire"]')) === chiffres(eur(Rq.notaire.total)) && await texte(q, "#k-v1") === norm(eur(Rq.Y[1].cf) + " / an"), "estimation rapide : mêmes chiffres que le moteur", await texte(q, '[data-live="notaire"]'));
+    await q.fill("#f-prix", ""); await q.waitForTimeout(60);
+    verif(await texte(q, "#k-v1") === "—" && !!(await q.$("#ana .attente")), "prix effacé : le bilan attend de nouveau le prix");
     await q.click('[data-mode="complet"]');
-    verif(q.erreurs.length === 0, "estimations : aucune erreur JavaScript", q.erreurs.slice(0, 3).join(" | "));
+    verif(q.erreurs.length === 0, "nouvelle simulation : aucune erreur JavaScript", q.erreurs.slice(0, 3).join(" | "));
     await q.context().close();
   }
 

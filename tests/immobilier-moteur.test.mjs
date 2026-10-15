@@ -2,7 +2,7 @@
 // - reproduit les chiffres relevés dans l'appli Cashflow Locatif (vidéo du 15/10/2026),
 // - respecte les barèmes officiels 2026 (notaire, impôt sur le revenu, plus-value),
 // - reste cohérent pour tous les régimes et des profils tirés au hasard,
-// - complète les champs laissés vides par des estimations de marché cohérentes.
+// - laisse la surface, le prix et le loyer à l'utilisateur et complète les autres champs vides par des repères standards.
 // Lancement : node tests/moteur.test.mjs
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -15,7 +15,8 @@ const m = html.split("/*CORE-START*/");
 if (m.length !== 2) { console.error("✗ Bloc /*CORE-START*/ introuvable dans " + fichier); process.exit(1); }
 const core = m[1].split("/*CORE-END*/")[0];
 const E = {};
-new Function("out", core + "; Object.assign(out, { RULES, REGIMES, DEFAULT_SIM, NOUVELLE_SIM, NULLABLES, CHARGES, estimer, marche, trouverLieu, normaliser, simuler, comparerRegimes, leviers, irFoyer, tmiFoyer, fraisNotaire, echeancier, abattementsPV, surtaxePV, tri });")(E);
+const REGIMES_NUS = new Set(["microFoncier", "reelFoncier", "jeanbrun"]);
+new Function("out", core + "; Object.assign(out, { RULES, REGIMES, DEFAULT_SIM, NOUVELLE_SIM, NULLABLES, CHARGES, estimer, lieu, requis, normaliser, simuler, comparerRegimes, leviers, irFoyer, tmiFoyer, fraisNotaire, echeancier, abattementsPV, surtaxePV, tri });")(E);
 
 let ok = 0, ko = 0; const erreurs = [];
 const groupe = t => console.log("\n" + t);
@@ -210,98 +211,96 @@ groupe("Cohérence sur 300 profils tirés au hasard");
   console.log(`  ${ko === avant ? "✓" : "✗"} ${ok - okAvant} contrôles`);
 }
 
-// Estimations : champs laissés vides complétés d'après le lieu, la surface et l'état
-groupe("Estimations des champs vides");
+// Champs vides : surface, prix et loyer à chercher soi-même ; repères standards (règles stables) pour le reste
+groupe("Champs vides et repères standards");
 {
   const avant = ko, okAvant = ok;
   const nv = o => Object.assign(JSON.parse(JSON.stringify(E.NOUVELLE_SIM)), o || {});
   const fin = v => Number.isFinite(v);
-  // Les champs d'une nouvelle simulation sont vides et le restent après normalisation
+  const chiffre = x => [x.coutTotal, x.emprunt, x.mise, x.rv.enrichissement, x.k.cf, x.k.brut].concat(x.Y.flatMap(y => [y.revenus, y.charges, y.credit, y.impot, y.cf])).every(fin);
+  const base = { surface: 45, prix: 120000, loyer: 600 };
+
+  // Nouvelle simulation : tout est vide, rien n'est inventé pour la surface, le prix et le loyer
   const n0 = E.normaliser(nv());
   vrai("nouvelle simulation : prix, loyer, taux et surface vides", [n0.prix, n0.loyer, n0.taux, n0.surface].every(v => v === null));
   vrai("nouvelle simulation : charges vides", E.CHARGES.every(c => n0[c].v === null));
-  vrai("l'exemple n'utilise aucune estimation", E.simuler(E.DEFAULT_SIM).auto.length === 0);
+  const ex = E.simuler(E.DEFAULT_SIM);
+  vrai("l'exemple n'utilise aucun repère et ne manque de rien", ex.auto.length === 0 && ex.manque.length === 0);
+  const x0 = E.simuler(nv());
+  egal("nouvelle simulation : il manque la surface, le prix et le loyer", x0.manque.join(","), "surface,prix,loyer");
+  egal("courte durée : le prix par nuit remplace le loyer", E.simuler(nv({ location: "courte", regime: "microbic" })).manque.join(","), "surface,prix,nuitee");
+  vrai("chiffres manquants : le calcul reste chiffré (il n'est pas affiché)", chiffre(x0));
+  vrai("chiffres manquants : les repères qui en dépendent sont signalés", ["travaux", "copro", "tf", "pno", "caution"].every(k => x0.incertains.includes(k)));
+  vrai("chiffres manquants : les repères qui n'en dépendent pas restent utilisables", ["taux", "tauxAss", "duree", "occupation", "dossier"].every(k => !x0.incertains.includes(k)));
+  const x1 = E.simuler(nv(base));
+  vrai("surface, prix et loyer remplis : plus rien ne manque, aucun repère douteux", x1.manque.length === 0 && x1.incertains.length === 0 && chiffre(x1));
+  egal("aucune base de prix par ville : Reims et Guéret donnent le même calcul", E.simuler(nv(Object.assign({ ville: "51100 Reims" }, base))).Y[1].cf, E.simuler(nv(Object.assign({ ville: "23000 Guéret" }, base))).Y[1].cf, 1e-9);
 
-  // Où est le bien ?
-  const lieu = (ville, adresse = "", dept = "") => E.trouverLieu({ ville, adresse, dept });
-  const L = (nom, l, type, dep) => { egal(`lieu « ${nom} » : type`, l.type, type); egal(`lieu « ${nom} » : département`, l.dep, dep); };
-  L("Reims", lieu("Reims"), "ville", "51");
-  L("Reims (51)", lieu("Reims (51)"), "ville", "51");
-  L("51100 Reims", lieu("51100 Reims"), "ville", "51");
-  L("adresse seule", lieu("", "12 rue de Vesle, 51100 Reims"), "ville", "51");
-  L("Paris 11e", lieu("Paris 11e"), "ville", "75");
-  L("Lyon 3e arrondissement", lieu("Lyon 3e arrondissement"), "ville", "69");
-  L("Saint-Denis (974)", lieu("Saint-Denis (974)"), "ville", "974");
-  L("Saint-Denis (93)", lieu("Saint-Denis (93)"), "ville", "93");
-  L("Béziers", lieu("Béziers"), "commune", "34");
-  L("Fort-de-France (moyennes de la Martinique)", lieu("Fort-de-France"), "dept", "972");
-  vrai("Fort-de-France : lieu reconnu, pas besoin de choisir le département", lieu("Fort-de-France").connu === true && !lieu("Trifouilly-les-Oies", "", "23").connu);
-  L("ville inconnue + département", lieu("Trifouilly-les-Oies", "", "23"), "dept", "23");
-  L("code postal d'une ville inconnue", lieu("23000 Trifouilly"), "dept", "23");
-  L("rien de saisi", lieu(""), "france", null);
-  vrai("Paris : encadrement des loyers", E.marche({ ville: "Paris" }).encadrement === true);
-  vrai("Reims : pas d'encadrement", E.marche({ ville: "Reims" }).encadrement === false);
+  // Où est le bien ? (encadrement des loyers, outre-mer, charges de copropriété en Île-de-France)
+  const li = (ville, adresse = "") => E.lieu({ ville, adresse });
+  egal("« Paris 11e » sans code postal : Paris", li("Paris 11e").dep, "75");
+  vrai("Paris : loyers encadrés", li("Paris 11e").encadrement && li("Paris").encadrement);
+  vrai("Lyon 3e et Bordeaux : loyers encadrés", li("Lyon 3e").encadrement && li("Bordeaux").encadrement);
+  vrai("Reims : loyers non encadrés", !li("Reims").encadrement && !li("Reims", "12 rue de Vesle, 51100 Reims").encadrement);
+  egal("département lu dans le code postal de l'adresse", li("", "12 rue de Vesle, 51100 Reims").dep, "51");
+  egal("département lu dans « Reims (51) »", li("Reims (51)").dep, "51");
+  vrai("Saint-Denis sans code postal : on ne devine pas (homonyme à La Réunion)", !li("Saint-Denis").encadrement);
+  vrai("Saint-Denis (93200) : loyers encadrés", li("Saint-Denis", "93200").encadrement);
+  vrai("Saint-Denis (974) : outre-mer, pas d'encadrement", li("Saint-Denis (974)").dom && !li("Saint-Denis (974)").encadrement);
+  vrai("Fort-de-France (97200) : outre-mer", li("Fort-de-France", "97200").dom);
+  const cop = v => E.simuler(nv(Object.assign({ ville: v }, base))).s.copro.v;
+  vrai("copropriété plus chère à Paris qu'à Reims (même surface)", cop("Paris") > cop("Reims"));
 
-  // Ordres de grandeur du marché (prix au m² des appartements, loyers hors charges d'un T2)
-  const mP = E.marche({ ville: "Paris" }), mR = E.marche({ ville: "Reims" }), mC = E.marche({ dept: "23" }), mF = E.marche({});
-  vrai("prix au m² : Paris entre 8 000 et 12 000 €", mP.pa > 8000 && mP.pa < 12000);
-  vrai("prix au m² : Paris > Reims > Creuse", mP.pa > mR.pa && mR.pa > mC.pa);
-  vrai("loyer au m² d'un T2 : Paris > Reims > Creuse", mP.l[1] > mR.l[1] && mR.l[1] > mC.l[1]);
-  vrai("loyer au m² : un studio se loue plus cher au m² qu'un T3", [mP, mR, mC, mF].every(m => m.l[0] > m.l[1] && m.l[1] > m.l[2]));
-  vrai("précision : bonne pour une grande ville, faible pour un département", mR.precision === "bonne" && mC.precision === "faible" && mF.precision === "faible");
-
-  // Pour chaque lieu et type de bien : estimations chiffrées, repères croissants, repère central = estimation
-  const lieux = [{ ville: "Paris 15e" }, { ville: "Reims (51)" }, { ville: "Béziers" }, { ville: "Fort-de-France" }, { ville: "Gap" }, { dept: "23" }, {}];
-  for (const o of lieux) for (const typeBien of ["appartement", "maison"]) for (const regime of ["microFoncier", "microBic"]) {
-    const nom = `${o.ville || o.dept || "France"} · ${typeBien} · ${regime}`;
-    let x; try { x = E.simuler(nv(Object.assign({ typeBien, regime }, o))); } catch (e) { vrai(`${nom} : calcul sans erreur (${e.message})`, false); continue; }
-    const vals = [x.coutTotal, x.emprunt, x.mise, x.rv.enrichissement, x.k.cf, x.k.brut].concat(x.Y.flatMap(y => [y.revenus, y.charges, y.credit, y.impot, y.cf]));
-    vrai(`${nom} : aucun résultat non chiffré`, vals.every(fin));
-    vrai(`${nom} : surface, prix et loyer estimés`, ["surface", "prix", "loyer", "taux"].every(k => x.auto.includes(k)) && x.s.prix > 10000 && x.s.loyer > 100);
+  // Repères : chiffrés, croissants, cohérents pour tous les profils
+  for (const typeBien of ["appartement", "maison"]) for (const regime of ["microFoncier", "microbic", "lmnpReel", "sciIs"]) for (const etat of ["bon", "renover"]) for (const location of ["annee", "courte"]) {
+    if (location === "courte" && REGIMES_NUS.has(regime)) continue;
+    const nom = `${typeBien} · ${regime} · ${etat} · ${location}`;
+    const o = Object.assign({ typeBien, regime, etat, location, nuitee: 70 }, base);
+    let x; try { x = E.simuler(nv(o)); } catch (e) { vrai(`${nom} : calcul sans erreur (${e.message})`, false); continue; }
+    vrai(`${nom} : résultats chiffrés`, chiffre(x) && x.manque.length === 0);
     for (const [k, e] of Object.entries(x.est)) if (e.t) {
       const v = e.t.map(t => t[1]);
-      vrai(`${nom} : repères de « ${k} » croissants`, v.every(fin) && v[0] <= v[1] && v[1] <= v[2]);
-      if (["prix", "loyer", "taux", "tauxAss", "copro", "tf", "pno", "nuitee", "occupation", "courantes", "valeurTravaux"].includes(k)) vrai(`${nom} : repère central de « ${k} » = estimation`, Math.abs(v[1] - e.v) < 1e-9);
+      vrai(`${nom} : repères de « ${k} » chiffrés et croissants`, v.every(fin) && v[0] <= v[1] && v[1] <= v[2]);
     }
-    vrai(`${nom} : rendement brut estimé entre 2 et 15 %`, x.k.brut > 0.02 && x.k.brut < 0.15);
+    vrai(`${nom} : rendement brut entre 2 et 20 %`, x.k.brut > 0.02 && x.k.brut < 0.2);
   }
 
-  // Taper l'estimation dans un champ ne change rien au résultat
-  for (const o of [{ ville: "Reims (51)" }, { ville: "Paris", regime: "lmnpReel" }, { ville: "Béziers", typeBien: "maison", etat: "renover", dpe: "F" }, { location: "courte", ville: "Nice" }]) {
-    const a = E.simuler(nv(o)), plein = nv(o);
+  // Taper le repère dans un champ ne change rien au résultat
+  for (const o of [{ ville: "Reims" }, { ville: "Paris", regime: "lmnpReel", surface: 30, prix: 280000, loyer: 1000 }, { ville: "Béziers", typeBien: "maison", etat: "renover", dpe: "F", surface: 90, prix: 160000, loyer: 850 }, { location: "courte", regime: "microbic", ville: "Nice", nuitee: 90 }]) {
+    const a = E.simuler(nv(Object.assign({}, base, o))), plein = nv(Object.assign({}, base, o));
     for (const k of E.NULLABLES) plein[k] = a.s[k];
     for (const c of E.CHARGES) plein[c] = { mode: a.s[c].mode, v: a.s[c].v };
     const b = E.simuler(plein), nom = o.ville + (o.location ? " (courte durée)" : "");
-    egal(`${nom} : champs remplis avec les estimations → même cash-flow`, b.Y[1].cf, a.Y[1].cf, 1e-6);
-    egal(`${nom} : champs remplis avec les estimations → même enrichissement`, b.rv.enrichissement, a.rv.enrichissement, 1e-6);
-    egal(`${nom} : plus aucune estimation utilisée`, b.auto.length, 0);
+    egal(`${nom} : repères tapés dans les champs → même cash-flow`, b.Y[1].cf, a.Y[1].cf, 1e-6);
+    egal(`${nom} : repères tapés dans les champs → même enrichissement`, b.rv.enrichissement, a.rv.enrichissement, 1e-6);
+    egal(`${nom} : plus aucun repère utilisé`, b.auto.length, 0);
   }
 
-  // Chaque champ vidé seul sur l'exemple : le calcul reste chiffré
+  // Chaque champ vidé seul sur l'exemple : à remplir (surface, prix, loyer) ou complété par un repère
   for (const k of E.NULLABLES.concat(E.CHARGES)) {
     const s = JSON.parse(JSON.stringify(E.DEFAULT_SIM));
     if (E.CHARGES.includes(k)) s[k].v = null; else s[k] = null;
-    const x = E.simuler(s);
-    vrai(`exemple avec « ${k} » vide : résultat chiffré`, [x.k.cf, x.rv.enrichissement, x.mise].every(fin) && x.auto.includes(k));
+    const x = E.simuler(s), aRemplir = E.requis(s).includes(k);
+    vrai(`exemple avec « ${k} » vide : ${aRemplir ? "signalé à remplir" : "complété par un repère"}`, chiffre(x) && (aRemplir ? x.manque.includes(k) : (x.auto.includes(k) || k === "nuitee") && !x.manque.length)); // prix par nuit : inutile à l'année
   }
 
-  // L'état, la surface et le DPE font bouger les estimations dans le bon sens
-  const px = o => E.simuler(nv(Object.assign({ ville: "Reims" }, o))).s;
-  vrai("un bien à rénover s'estime moins cher et avec des travaux", px({ surface: 50, etat: "renover" }).prix < px({ surface: 50 }).prix && px({ surface: 50, etat: "renover" }).travaux > 0);
-  vrai("un bien plus grand s'estime plus cher et se loue plus cher", px({ surface: 70 }).prix > px({ surface: 40 }).prix && px({ surface: 70 }).loyer > px({ surface: 40 }).loyer);
-  vrai("un meublé se loue plus cher qu'un vide", px({ surface: 40, regime: "microBic" }).loyer > px({ surface: 40, regime: "microFoncier" }).loyer);
-  egal("DPE F ou G : loyer gelé (évolution 0 %)", px({ dpe: "G" }).evolLoyer, 0);
-  const surfDuPrix = px({ prix: 150000 }).surface;
-  vrai("surface déduite du prix quand elle est vide (150 000 € à Reims : 40 à 75 m²)", surfDuPrix > 40 && surfDuPrix < 75);
+  // Les repères suivent des règles simples et stables
+  const st = o => E.simuler(nv(Object.assign({}, base, o))).s;
+  egal("bon état : pas de travaux", st({}).travaux, 0);
+  egal("à rénover : 800 €/m² de travaux", st({ etat: "renover" }).travaux, 36000);
+  egal("DPE G en bon état : rénovation énergétique 350 €/m²", st({ dpe: "G" }).travaux, 16000);
+  egal("DPE F ou G : loyer gelé", st({ dpe: "F" }).evolLoyer, 0);
+  egal("taxe foncière : 20 €/m² par an", st({}).tf.v, 900);
+  egal("copropriété hors Île-de-France : 25 €/m² par an", st({}).copro.v, 1130, 5);
+  vrai("location nue : pas de mobilier ; meublé : mobilier prévu", st({ regime: "microFoncier" }).mobilier === 0 && st({ regime: "microbic" }).mobilier > 0);
+  vrai("taux : plus long, plus cher", st({ duree: 25 }).taux > st({ duree: 15 }).taux);
 
   // Alertes liées au bien
-  const al = o => E.simuler(nv(o)).warnings.map(w => w.k + ":" + w.niveau);
-  vrai("DPE G : alerte critique", al({ ville: "Reims", dpe: "G" }).includes("dpe:critique"));
-  vrai("DPE G en outre-mer : alerte (interdiction en 2028)", al({ ville: "Fort-de-France", dpe: "G" }).includes("dpe:attention"));
+  const al = o => E.simuler(nv(Object.assign({}, base, o))).warnings.map(w => w.k + ":" + w.niveau);
+  vrai("DPE G : alerte critique", al({ dpe: "G" }).includes("dpe:critique"));
+  vrai("DPE G en outre-mer : alerte (interdiction en 2028)", al({ ville: "Fort-de-France", adresse: "97200", dpe: "G" }).includes("dpe:attention"));
   vrai("Paris : rappel de l'encadrement des loyers", al({ ville: "Paris" }).includes("encadrement:info"));
-  vrai("loyer très au-dessus du marché : alerte", al({ ville: "Reims", surface: 45, loyer: 1500 }).includes("loyer-marche:attention"));
-  vrai("loyer au niveau du marché : pas d'alerte", !al({ ville: "Reims", surface: 45, loyer: 600 }).some(w => w.startsWith("loyer-marche")));
-  vrai("prix très en dessous du marché : signalé", al({ ville: "Paris", surface: 40, prix: 150000 }).includes("prix-marche:info"));
+  vrai("Saint-Denis sans code postal : pas d'alerte d'encadrement", !al({ ville: "Saint-Denis" }).some(w => w.startsWith("encadrement")));
   console.log(`  ${ko === avant ? "✓" : "✗"} ${ok - okAvant} contrôles`);
 }
 
