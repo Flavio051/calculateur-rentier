@@ -71,7 +71,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:1
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .num,.tbl,.kpi-v,.stat .v,.recap b,.list b{font-variant-numeric:tabular-nums}
-.app{max-width:1620px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 48px}
+.app{max-width:1620px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 76px}
 
 /* Barre du haut */
 .top{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding-block:4px 12px}
@@ -276,6 +276,14 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
 .foot{margin-top:22px;font-size:12px;color:var(--faint);max-width:110ch}
 .foot p{margin:4px 0}
 
+/* Bouton du thème, comme sur le simulateur rentier */
+.theme-toggle{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);color:var(--muted);font-weight:600;font-size:12.5px;cursor:pointer}
+.theme-toggle:hover{color:var(--ink);border-color:var(--line-strong)}
+.theme-toggle .knob{position:relative;width:32px;height:18px;border-radius:999px;background:var(--line-strong);transition:background .2s}
+.theme-toggle .knob::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--surface);transition:transform .2s}
+.theme-toggle[aria-pressed="true"] .knob{background:var(--accent)}
+.theme-toggle[aria-pressed="true"] .knob::after{transform:translateX(14px)}
+
 /* Fenêtres */
 .modal{position:fixed;inset:0;z-index:60;background:rgba(8,15,25,.5);display:grid;place-items:center;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:max(16px,env(safe-area-inset-top,0px));padding-bottom:max(16px,env(safe-area-inset-bottom,0px))}
 .dialog{width:min(620px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--surface);border-radius:14px;border:1px solid var(--line);box-shadow:0 24px 60px rgba(0,0,0,.3);padding:18px 20px 20px}
@@ -323,7 +331,7 @@ textarea.code{width:100%;min-height:160px;font-family:ui-monospace,SFMono-Regula
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 @media print{
   body{background:#fff;color:#000}
-  .app,.modal,#tt{display:none!important}
+  .app,.modal,#tt,.theme-toggle{display:none!important}
   #report{display:block!important;font:11pt/1.45 var(--f-body);color:#000}
   #report h1{font-family:var(--f-display);font-size:20pt;margin:0 0 4pt}
   #report h2{font-family:var(--f-display);font-size:13pt;margin:16pt 0 6pt;border-bottom:1px solid #999;padding-bottom:3pt;break-after:avoid}
@@ -421,6 +429,7 @@ textarea.code{width:100%;min-height:160px;font-family:ui-monospace,SFMono-Regula
   </footer>
 </div>
 
+<button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false"><span>Sombre</span><span class="knob" aria-hidden="true"></span></button>
 <div class="modal" id="modal" hidden><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title" id="dialog"></div></div>
 <div id="tt" role="tooltip" hidden></div>
 <div id="report"></div>
@@ -940,7 +949,7 @@ const TOP = (() => { try { return window.top === window.self; } catch (e) { retu
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
 /* ---------- Stockage ---------- */
-const KEY = "bilan-locatif-v1", UI_KEY = "bilan-locatif-ui";
+const KEY = "bilan-locatif-v1", UI_KEY = "bilan-locatif-ui", THEME_KEY = "bilan-locatif-theme";
 const store = {
   get(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -1777,6 +1786,16 @@ function buildReport() {
 }
 if (TOP) { const pb = $("#btn-print"); pb.hidden = false; pb.addEventListener("click", () => { $("#report").innerHTML = buildReport(); window.print(); }); addEventListener("beforeprint", () => { $("#report").innerHTML = buildReport(); }); }
 
+/* ---------- Thème sombre ---------- */
+const tbtn = $("#theme-toggle");
+const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === "dark" : !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches); };
+const syncThemeBtn = () => tbtn.setAttribute("aria-pressed", String(isDark()));
+const savedTheme = store.get(THEME_KEY);
+if (savedTheme === "dark" || savedTheme === "light") document.documentElement.dataset.theme = savedTheme;
+syncThemeBtn();
+tbtn.addEventListener("click", () => { const next = isDark() ? "light" : "dark"; document.documentElement.dataset.theme = next; store.set(THEME_KEY, next); syncThemeBtn(); });
+if (window.matchMedia) { const mqd = matchMedia("(prefers-color-scheme: dark)"); if (mqd.addEventListener) mqd.addEventListener("change", syncThemeBtn); }
+
 /* ---------- Démarrage ---------- */
 function fullRender() {
   R = simuler(S);
@@ -1786,7 +1805,7 @@ function fullRender() {
 const band = $("#band");
 const setBandH = () => document.documentElement.style.setProperty("--band-h", band.offsetHeight + "px");
 if ("ResizeObserver" in window) new ResizeObserver(setBandH).observe(band); else setBandH();
-const rerender = () => { anaKey = ""; renderAna(true); renderBand(); };
+const rerender = () => { anaKey = ""; renderAna(true); renderBand(); syncThemeBtn(); };
 if (window.matchMedia) { const mq = matchMedia("(prefers-color-scheme: dark)"); if (mq.addEventListener) mq.addEventListener("change", rerender); }
 new MutationObserver(rerender).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 fullRender();

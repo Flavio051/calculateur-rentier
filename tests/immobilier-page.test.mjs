@@ -94,10 +94,22 @@ try {
   await p.click("[data-back]"); await p.click("[data-import]"); await p.fill("#imp", exp); await p.click("[data-doimport]"); await p.waitForTimeout(50);
   verif((await texte(p, "#imp-msg")).startsWith("1 simulation importée"), "import d'un export", await texte(p, "#imp-msg"));
   await p.keyboard.press("Escape");
+
+  // 7. Bouton « Sombre » : bascule, enregistrement, graphiques redessinés
+  await p.click('[data-ana="synthese"]');
+  const fond = () => p.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const fondClair = await fond();
+  await p.click("#theme-toggle"); await p.waitForTimeout(80);
+  verif(await p.getAttribute("html", "data-theme") === "dark" && await p.getAttribute("#theme-toggle", "aria-pressed") === "true" && (await fond()) !== fondClair, "bouton « Sombre » : passage en thème sombre");
+  verif(await p.evaluate(() => { const c = Chart.getChart(document.getElementById("c-cf")); return !!c && c.options.scales.y.ticks.color === getComputedStyle(document.documentElement).getPropertyValue("--muted").trim(); }), "thème sombre : graphiques redessinés aux couleurs du thème");
+  await p.reload(); await p.waitForSelector("#k-v1");
+  verif(await p.getAttribute("html", "data-theme") === "dark" && await p.getAttribute("#theme-toggle", "aria-pressed") === "true", "thème sombre retrouvé après rechargement");
+  await p.click("#theme-toggle"); await p.waitForTimeout(50);
+  verif(await p.getAttribute("html", "data-theme") === "light" && await p.getAttribute("#theme-toggle", "aria-pressed") === "false" && (await fond()) === fondClair, "bouton « Sombre » : retour au thème clair");
   verif(p.erreurs.length === 0, "aucune erreur JavaScript (ordinateur)", p.erreurs.slice(0, 3).join(" | "));
   await p.context().close();
 
-  // 7. Mobile et thème sombre : pas de débordement, pas d'erreur
+  // 8. Mobile et thème sombre : pas de débordement, pas d'erreur
   for (const [w, h, sc] of [[390, 844, "light"], [390, 844, "dark"], [1024, 768, "dark"]]) {
     const q = await page(w, h, sc); let deb = 0;
     for (const tab of ["synthese", "treso", "emprunt", "fisc", "comparatif", "revente"]) { await q.click(`[data-ana="${tab}"]`); deb = Math.max(deb, await q.evaluate(() => document.documentElement.scrollWidth - innerWidth)); }
