@@ -4,6 +4,22 @@
 - Le moteur de calcul se trouve entre `/*CORE-START*/` et `/*CORE-END*/`. Il ne touche pas au DOM, parce que les tests l'exécutent dans Node. Garde-le ainsi.
 - Objectif produit : des résultats identiques à https://guistorm.com/rentier pour les mêmes réglages.
 
+## Bilan Locatif (`immobilier/index.html`)
+
+- Même principe : un seul fichier, c'est la source de vérité. Le moteur se trouve entre `/*CORE-START*/` et `/*CORE-END*/`, sans DOM.
+- Les tests `tests/immobilier-*.test.mjs` vérifient trois choses :
+  - les chiffres relevés dans l'appli Cashflow Locatif (vidéo du 15/10/2026). Ne jamais les modifier pour faire passer un test ;
+  - les barèmes officiels 2026 ;
+  - des invariants sur 300 profils.
+- Règles fiscales 2026 dans l'objet `RULES` :
+  - prélèvements sociaux : 18,6 % sur les revenus BIC, 17,2 % sur les revenus fonciers et les plus-values ;
+  - micro-BIC : plafond de 83 600 €, ou 15 000 € pour un meublé de tourisme non classé ;
+  - barème de l'impôt sur le revenu : tranches à 11 600, 29 579, 84 577 et 181 917 € ;
+  - déficit foncier imputable jusqu'à 10 700 € (21 400 € en cas de rénovation énergétique) ;
+  - Jeanbrun (encore en cours de précision par l'administration) ;
+  - frais de notaire : droits de mutation de 6,32 %.
+- À chaque changement de loi, mettre à jour `RULES` et la note de bas de page.
+
 ## Avant tout push (obligatoire)
 
 1. `npm ci`, puis `npx playwright install chromium` si le navigateur manque.

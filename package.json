@@ -1,12 +1,13 @@
 {
   "name": "calculateur-rentier",
   "private": true,
-  "description": "Simulateur d'âge rentier (site statique index.html) et ses contrôles automatiques",
+  "description": "Deux simulateurs statiques (index.html : rentier ; immobilier/index.html : investissement locatif) et leurs contrôles automatiques",
   "scripts": {
-    "test": "node tests/moteur.test.mjs && node tests/page.test.mjs",
+    "test": "node tests/moteur.test.mjs && node tests/page.test.mjs && node tests/immobilier-moteur.test.mjs && node tests/immobilier-page.test.mjs",
     "test:moteur": "node tests/moteur.test.mjs",
     "test:page": "node tests/page.test.mjs",
-    "prepare": "git config core.hooksPath .githooks || true"
+    "prepare": "git config core.hooksPath .githooks || true",
+    "test:immobilier": "node tests/immobilier-moteur.test.mjs && node tests/immobilier-page.test.mjs"
   },
   "devDependencies": {
     "chart.js": "4.4.1",
