@@ -667,6 +667,7 @@ function tauxMarche(duree) {
   for (let i = 1; i < t.length; i++) if (duree <= t[i][0]) { const f = (duree - t[i - 1][0]) / (t[i][0] - t[i - 1][0]); return [1, 2, 3].map(j => Math.round((t[i - 1][j] + f * (t[i][j] - t[i - 1][j])) * 100) / 100); }
 }
 const _arr = (v, pas) => Math.round(v / pas) * pas;
+const _e = v => Math.round(v).toLocaleString("fr-FR") + " €";
 // Les chiffres à chercher soi-même : surface et prix (annonce), loyer ou prix par nuit (annonces de location du quartier)
 const requis = s => ["surface", "prix", s.location === "courte" ? "nuitee" : "loyer"];
 // Tant qu'ils manquent, le calcul tourne sur des valeurs de secours jamais affichées (deux jeux, pour repérer ce qui en dépend)
@@ -702,7 +703,7 @@ function estimer(s, variante = 0) {
   fill("travauxMois", travM);
   const mobEst = meuble ? _arr(Math.max(3500, 110 * S) * (s.location === "courte" ? 1.3 : 1), 100) : 0;
   est.mobilier = { v: mobEst, t: meuble ? tiers([_arr(Math.max(2500, 60 * S), 100), mobEst, _arr(Math.max(5000, 180 * S), 100)], ["Essentiel", "Confort", "Haut de gamme"]) : null,
-    info: meuble ? "Liste d'équipements obligatoires du meublé : literie, plaques, frigo, vaisselle, rangements…" : "Location nue : pas de mobilier à prévoir." };
+    info: meuble ? `Pour ${Math.round(S)} m² : environ 60 €/m² pour l'essentiel, 110 €/m² pour un meublé confortable${s.location === "courte" ? " (+30 % en courte durée)" : ""}, 180 €/m² en haut de gamme. Le logement doit contenir la liste d'équipements obligatoires : literie, plaques, frigo, vaisselle, rangements…` : "Location nue : pas de mobilier à prévoir." };
   fill("mobilier", mobEst);
   fill("plans", 0); est.plans = { v: 0, t: null };
 
@@ -717,15 +718,17 @@ function estimer(s, variante = 0) {
   fill("taux", tm[1]);
   est.tauxAss = { v: 0.25, t: tiers([0.1, 0.25, 0.4], ["Délégation, moins de 40 ans", "Moyenne", "Contrat de la banque"]), info: "En % du capital emprunté par an." };
   fill("tauxAss", 0.25);
-  est.dossier = { v: 750, t: tiers([0, 750, 1500], ["Négociés", "Courants", "Élevés"]) }; fill("dossier", 750);
-  const fraisPerso = _arr(not + agence + 750, 500);
-  est.apport = { v: 0, t: tiers([0, fraisPerso, _arr(0.2 * cout, 1000)], ["Sans apport", "Les frais", "20 % du projet"]), info: "Les banques demandent souvent que l'apport couvre au moins les frais de notaire." };
+  est.dossier = { v: 750, t: tiers([0, 750, 1500], ["Négociés", "Courants", "Élevés"]), info: "Facturés par la banque pour monter le prêt : souvent 500 à 1 000 €, parfois négociés jusqu'à zéro (un courtier y aide)." }; fill("dossier", 750);
+  const fraisPerso = _arr(not + agence + 750, 500), p20 = _arr(0.2 * x.prix, 1000), pcF = x.prix > 0 ? Math.round(fraisPerso / x.prix * 100) : 0;
+  est.apport = { v: 0, t: [["Sans apport", 0], [`Les frais (${pcF} % du prix)`, fraisPerso], ["20 % du prix", p20]].sort((u, w) => u[1] - w[1]),
+    info: `Calculé sur ton prix de ${_e(x.prix)} : les frais (notaire, agence, frais de dossier) font ${_e(fraisPerso)}, soit ${pcF} % du prix ; 20 % du prix font ${_e(p20)}. Les banques demandent souvent un apport qui couvre au moins les frais.` };
   fill("apport", 0);
   const emp = Math.max(0, finance - x.apport);
   const pct1 = _arr(0.01 * emp, 100);
   est.courtage = { v: 0, t: pct1 < 1500 ? tiers([0, pct1, 1500], ["Sans courtier", "1 % du prêt", "Forfait"]) : tiers([0, 1500, pct1], ["Sans courtier", "Forfait", "1 % du prêt"]) }; fill("courtage", 0);
   const cau = s.cautionMode === "pct" ? [0.8, 1.2, 2] : [_arr(0.008 * emp, 50), _arr(0.012 * emp, 50), _arr(0.02 * emp, 50)];
-  est.caution = { v: cau[1], t: tiers(cau, ["Caution", "Moyenne", "Hypothèque"]), info: "Caution type Crédit Logement : environ 1 à 1,5 % du prêt, dont une partie est restituée à la fin." };
+  est.caution = { v: cau[1], t: tiers(cau, ["Caution, bon dossier", "Caution courante", "Hypothèque"]),
+    info: `Calculée sur le montant emprunté : ${_e(emp)}. Caution d'un organisme (type Crédit Logement) : environ 0,8 à 1,2 % du prêt, dont une partie est restituée à la fin ; hypothèque : environ 2 %.` };
   fill("caution", cau[1]);
   const difM = x.travauxMois > 0 ? x.travauxMois : 6;
   est.differeMois = { v: difM, t: null }; fill("differeMois", difM);
@@ -762,16 +765,16 @@ function estimer(s, variante = 0) {
     if (x[k].v == null) { x[k] = { mode: s[k].mode, v }; auto.push(k); }
   };
   charge("copro", maison ? [0, 0, 0] : coproM2.map(coproAn), maison ? null : ["Petite copropriété", "Courante", "Ascenseur, gardien"],
-    maison ? "Maison individuelle : pas de copropriété." : `Le vrai montant est sur l'annonce : les charges annuelles de copropriété y sont obligatoires. À défaut, compte environ ${Math.round(coproM2[1])} €/m² par an (${Math.round(coproM2[0])} sans services, ${Math.round(coproM2[2])} avec chauffage collectif, ascenseur ou gardien).`);
+    maison ? "Maison individuelle : pas de copropriété." : `Calculé pour ${Math.round(S)} m² : ${Math.round(coproM2[0])} €/m² par an sans services, ${Math.round(coproM2[1])} €/m² en moyenne, ${Math.round(coproM2[2])} €/m² avec chauffage collectif, ascenseur ou gardien${L.zone > 1 ? " (majorés ici : Paris, Île-de-France ou Côte d'Azur)" : ""}. Le vrai montant figure obligatoirement sur l'annonce.`);
   charge("tf", [15, 20, 26].map(v => v * S), ["Basse", "Moyenne", "Haute"], "Le vrai montant est sur l'annonce ou l'avis de taxe foncière du vendeur : demande-le. À défaut, compte 15 à 26 €/m² par an (moyenne de 20 €/m² dans les 32 plus grandes villes, Meilleurtaux).");
-  charge("gli", [0, 0.025, 0.035].map(p => p * revAn), ["Sans", "Courante (2,5 %)", "Complète (3,5 %)"], "Assurance loyers impayés : en option.");
+  charge("gli", [0, 0.025, 0.035].map(p => p * revAn), ["Sans", "Courante (2,5 %)", "Complète (3,5 %)"], `Calculée sur tes loyers annuels charges comprises : ${_e(revAn)} (loyer et charges × 12 × taux d'occupation). Contrat courant : 2,5 % ; garantie complète : 3,5 %. En option.`);
   charge("gerance", [0, 0.05, 0.08].map(p => p * revAn), ["Toi-même", "En ligne (5 %)", "Agence (8 %)"], "Gestion par une agence : en option.");
   const compta = s.regime === "lmnpReel" ? [250, 450, 750] : s.regime === "sciIs" ? [1000, 1500, 2000] : null;
   charge("comptable", compta || [0, 0, 0], compta ? ["En ligne", "Courant", "Cabinet"] : null, compta ? (s.regime === "sciIs" ? "Une SCI à l'IS tient une comptabilité complète." : "LMNP au réel : liasse fiscale chaque année.") : "Pas de comptable obligatoire avec ce régime.");
   const pnoAn = (maison ? 180 * Math.sqrt(S / 90) : 130 * Math.sqrt(S / 50));
-  charge("pno", [pnoAn * 0.55, pnoAn, pnoAn * 1.7], ["Basse", "Moyenne", "Haute"], "Assurance propriétaire non occupant (obligatoire en copropriété) : environ 130 € par an pour un appartement, 180 € pour une maison.", 5);
+  charge("pno", [pnoAn * 0.55, pnoAn, pnoAn * 1.7], ["Basse", "Moyenne", "Haute"], `Pour ${maison ? "une maison" : "un appartement"} de ${Math.round(S)} m² : environ ${_e(pnoAn)} par an (repère : 130 € pour un appartement de 50 m², 180 € pour une maison de 90 m²). Obligatoire en copropriété.`, 5);
   const aut = etat === "neuf" ? [0.005, 0.01, 0.02] : [0.01, 0.03, 0.05];
-  charge("autres", aut.map(p => p * revAn), etat === "neuf" ? ["Très peu", "Neuf", "Prudent"] : ["Récent", "Courant", "Ancien"], "Petites réparations et remplacements : quelques % des loyers par an.");
+  charge("autres", aut.map(p => p * revAn), etat === "neuf" ? ["Très peu", "Neuf", "Prudent"] : ["Récent", "Courant", "Ancien"], `Calculé sur tes loyers annuels : ${_e(revAn)}. Petites réparations et remplacements : ${etat === "neuf" ? "dans le neuf, compte 0,5 à 2 % des loyers par an" : "compte 1 % des loyers par an pour un bien récent, 3 % en moyenne, 5 % pour un bien ancien"}.`);
   const cfeDue = meuble && s.regime !== "sciIs" && revAn >= 5000;
   est.cfe = { v: cfeDue ? 250 : 0, t: cfeDue ? tiers([100, 250, 500], ["Petite commune", "Courante", "Grande ville"]) : null,
     info: meuble ? (cfeDue ? "Due en location meublée dès 5 000 € de recettes par an ; le montant dépend de la commune." : "Exonération en dessous de 5 000 € de recettes par an.") : "Location nue : pas de CFE." };
@@ -1251,6 +1254,8 @@ const REG_TXT = {
 /* ---------- Champs du formulaire ---------- */
 let fid = 0;
 const NUL_UI = new Set([...NULLABLES, ...CHARGES.map(c => c + ".v")]);
+// Repères cliquables sous le champ : seulement là où ils aident vraiment (calcul détaillé dans le « i ») ; ailleurs, juste la valeur en gris
+const REPERES = new Set(["mobilier", "apport", "dossier", "caution", "copro", "gli", "pno", "autres"]);
 const estKey = k => k.replace(/\.v$/, "");
 const vide = k => getK(S, k) == null;
 // Unité courte pour les repères : « 625 € », « 3,40 % », « 45 m² », « 20 ans »
@@ -1270,10 +1275,10 @@ function num(k, label, o = {}) {
   return `<div class="fld">
     <div class="fld-top"><label for="f-${id}">${esc(label)}${tip}</label>${mode}</div>
     <div class="fld-row">
-      <div class="inp${auto ? " auto" : ""}${estime ? " est" : ""}${req ? " req" : ""}"><input id="f-${id}" data-k="${k}" data-num data-dec="${dec}"${o.autoKey ? ` data-auto="${o.autoKey}"` : ""} inputmode="decimal" autocomplete="off" value="${estime ? "" : fmtIn(raw, dec)}" placeholder="${estime && !flou ? fmtIn(getK(X, k), dec) : ""}"${E ? ` aria-describedby="r-${id}"` : ""}><span class="tag"><span class="t-est" title="Repère standard : tape ton chiffre pour le remplacer">estimé</span><span class="t-req" title="Chiffre à chercher toi-même">à remplir</span></span><span class="u">${esc(o.unit || "")}</span></div>
+      <div class="inp${auto ? " auto" : ""}${estime ? " est" : ""}${req ? " req" : ""}"><input id="f-${id}" data-k="${k}" data-num data-dec="${dec}"${o.autoKey ? ` data-auto="${o.autoKey}"` : ""} inputmode="decimal" autocomplete="off" value="${estime ? "" : fmtIn(raw, dec)}" placeholder="${estime && !flou ? fmtIn(getK(X, k), dec) : ""}"${E && REPERES.has(estKey(k)) ? ` aria-describedby="r-${id}"` : ""}><span class="tag"><span class="t-est" title="Repère standard : tape ton chiffre pour le remplacer">estimé</span><span class="t-req" title="Chiffre à chercher toi-même">à remplir</span></span><span class="u">${esc(o.unit || "")}</span></div>
       <div class="step" role="group" aria-label="Ajuster"><button type="button" data-step="${-(o.step || 1)}" data-for="f-${id}" aria-label="Diminuer ${esc(label)}">−</button><button type="button" data-step="${o.step || 1}" data-for="f-${id}" aria-label="Augmenter ${esc(label)}">+</button></div>
     </div>
-    ${E ? `<div class="tiers" id="r-${id}" data-tiers="${k}" data-dec="${dec}" data-u="${esc(uniteCourte(o.unit))}"></div>` : ""}
+    ${E && REPERES.has(estKey(k)) ? `<div class="tiers" id="r-${id}" data-tiers="${k}" data-dec="${dec}" data-u="${esc(uniteCourte(o.unit))}"></div>` : ""}
     ${o.hint ? `<p class="hint">${o.hint}</p>` : ""}
   </div>`;
 }
@@ -1429,7 +1434,7 @@ const FORMS = {
     if (S.pret) {
       h += num("apport", "Apport", { unit: "€", step: 1000, hint: "Ce que tu mets de ta poche : il réduit le montant emprunté." }) +
         num("duree", "Durée du crédit", { unit: "ans", step: 1 }) +
-        num("taux", "Taux du crédit", { unit: "%", step: 0.05, dec: 2, hint: "Hors assurance." }) +
+        num("taux", "Taux du crédit", { unit: "%", step: 0.05, dec: 2, hint: `Hors assurance. En gris : le taux moyen d'${TAUX_MAJ} pour cette durée ; vérifie le tien auprès de ta banque.` }) +
         num("tauxAss", "Taux de l'assurance emprunteur", { unit: "%", step: 0.01, dec: 2, hint: "En % du capital emprunté, chaque année." }) +
         num("courtage", "Frais de courtage", { unit: "€", step: 100 }) +
         num("dossier", "Frais de dossier bancaire", { unit: "€", step: 100 }) +
@@ -1465,7 +1470,7 @@ const FORMS = {
   charges() {
     return head("Charges", "Ce que tu paies chaque année en tant que propriétaire.") +
       chargeFld("copro", "Frais de copropriété", "Total des appels de fonds, y compris la part refacturée au locataire.") +
-      chargeFld("tf", "Taxe foncière") +
+      chargeFld("tf", "Taxe foncière", "Le vrai montant : sur l'avis de taxe foncière du vendeur. En gris : environ 20 €/m² par an.") +
       chargeFld("gli", "Assurance loyers impayés") +
       chargeFld("gerance", "Frais de gérance") +
       chargeFld("comptable", "Frais de comptable") +
@@ -1533,7 +1538,7 @@ function aideHTML() {
   return `<div class="rt">Où trouver les bons chiffres</div>
     <p><b>Prix</b> : celui de l'annonce. Pour savoir s'il est juste, regarde les ventes réelles de la rue sur l'${lien("https://explore.data.gouv.fr/immobilier", "explorateur DVF")} (site officiel et gratuit de l'État).</p>
     <p><b>${courte ? "Prix par nuit" : "Loyer"}</b> : ${courte ? "ouvre cinq annonces comparables sur Airbnb ou Booking, à la même saison, et garde le prix du milieu."
-      : `ouvre cinq annonces de location proches (même quartier, surface voisine) sur Leboncoin, SeLoger ou PAP, garde celle du milieu et retire les charges. Repère officiel par commune : la ${lien("https://www.ecologie.gouv.fr/politiques-publiques/carte-loyers", "carte des loyers")} du ministère (charges comprises).`}</p>
+      : `ouvre cinq annonces de location proches (même quartier, surface voisine) sur Leboncoin, SeLoger ou PAP, garde celle du milieu et retire les charges.`}</p>
     <p><b>Copropriété et taxe foncière</b> : les charges de copropriété figurent obligatoirement sur l'annonce ; pour la taxe foncière, demande l'avis au vendeur.</p>
     ${flags.map(([c, f]) => `<div class="flag ${c}">${esc(f)}</div>`).join("")}`;
 }
@@ -1577,7 +1582,7 @@ FORMS.rapide = () => head("Estimation rapide", "La surface, le prix et le loyer 
   num("loyer", "Loyer mensuel hors charges", { unit: "€ / mois", step: 10, hint: "Ta recherche : l'annonce du milieu parmi cinq locations proches, hors charges." }) +
   num("apport", "Apport", { unit: "€", step: 1000 }) +
   num("duree", "Durée du crédit", { unit: "ans", step: 1 }) +
-  num("taux", "Taux du crédit", { unit: "%", step: 0.05, dec: 2 }) +
+  num("taux", "Taux du crédit", { unit: "%", step: 0.05, dec: 2, hint: `En gris : le taux moyen d'${TAUX_MAJ} ; vérifie le tien auprès de ta banque.` }) +
   `<div class="assume"><b>Hypothèses de l'estimation rapide</b><ul><li>Charges forfaitaires : 25 % des loyers (taxe foncière, copropriété, assurances, entretien).</li><li>Assurance emprunteur ${nf(2).format(X.tauxAss)} %, location à l'année, occupation ${X.occupation} %.</li><li>Fiscalité : ${esc(REGIMES[X.regime].label)}${X.regime === "sciIs" ? "" : ", taux marginal " + X.tmi + " %"}.</li><li>Revente après ${plural(X.detention, "an")}, bien revalorisé de ${nf(2).format(X.revalo)} % par an.</li></ul></div>` +
   ctas([["mode:complet", "Affiner avec la simulation complète", true]]);
 function renderForm() {
