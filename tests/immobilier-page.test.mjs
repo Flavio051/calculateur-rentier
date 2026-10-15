@@ -1,5 +1,6 @@
 // Contrôle 2 : Bilan Locatif dans un vrai navigateur (Chromium)
-// Chargement sans erreur, indicateurs identiques au moteur, saisie, sauvegarde, simulations, export/import, mobile.
+// Chargement sans erreur, indicateurs identiques au moteur, saisie, sauvegarde, simulations, export/import,
+// estimations des champs vides (repères), défilement du formulaire, mobile.
 // Lancement : node tests/page.test.mjs   (nécessite Playwright et Chart.js dans node_modules)
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -16,7 +17,7 @@ const chartLocal = readFileSync(path.join(modules, "chart.js", "dist", "chart.um
 const html = readFileSync(fichier, "utf8");
 
 // Moteur de la page, pour calculer les valeurs attendues
-const E = {}; new Function("out", html.split("/*CORE-START*/")[1].split("/*CORE-END*/")[0] + "; Object.assign(out, { simuler, normaliser, DEFAULT_SIM });")(E);
+const E = {}; new Function("out", html.split("/*CORE-START*/")[1].split("/*CORE-END*/")[0] + "; Object.assign(out, { simuler, normaliser, DEFAULT_SIM, NOUVELLE_SIM });")(E);
 const eur = v => { const r = Math.round(v); return (r < 0 ? "−" : "") + new Intl.NumberFormat("fr-FR").format(Math.abs(r)) + " €"; };
 const norm = t => String(t).replace(/[  ]/g, " ").trim();
 
@@ -39,6 +40,7 @@ async function page(w, h, scheme = "light") {
   await p.goto(adresse); await p.waitForSelector("#k-v1");
   return p;
 }
+const chiffres = t => String(t).replace(/[^\d,-]/g, "");
 const texte = (p, s) => p.$eval(s, e => e.textContent).then(norm);
 
 try {
@@ -51,7 +53,9 @@ try {
   verif(await texte(p, "#k-v1") === norm(eur(R.Y[1].cf) + " / an"), "cash-flow de l'année 2 identique au moteur", await texte(p, "#k-v1"));
   verif(await texte(p, "#k-v3") === norm(eur(R.mise)), "mise de départ identique au moteur");
   verif(await texte(p, "#k-v4") === norm(eur(R.rv.enrichissement)), "enrichissement identique au moteur");
-  verif((await texte(p, "#f-notaire".replace("#", "#"))).length === 0 && norm(await p.inputValue("#f-notaire")) === norm(new Intl.NumberFormat("fr-FR").format(Math.round(R.notaire.total))), "frais de notaire calculés automatiquement (" + Math.round(R.notaire.total) + " €)");
+  verif(await p.$eval(".rail [data-sec]", e => e.dataset.sec) === "bien" && !!(await p.$("#t-ville")), "« Le bien » en première section, avec la ville");
+  await p.click('[data-sec="invest"]');
+  verif(norm(await p.inputValue("#f-notaire")) === norm(new Intl.NumberFormat("fr-FR").format(Math.round(R.notaire.total))), "frais de notaire calculés automatiquement (" + Math.round(R.notaire.total) + " €)");
   verif(await p.evaluate(() => !!(window.Chart && Chart.getChart(document.getElementById("c-cf")) && Chart.getChart(document.getElementById("c-enr")))), "graphiques de la synthèse dessinés");
 
   // 2. Saisie : changer le prix met tout à jour
@@ -64,7 +68,7 @@ try {
   await p.click('[data-step="-1000"][data-for="f-prix"]');
 
   // 3. Les 7 sections et les 6 analyses s'affichent
-  for (const sec of ["fin", "expl", "charges", "fisc", "revente", "infos", "invest"]) await p.click(`[data-sec="${sec}"]`);
+  for (const sec of ["fin", "expl", "charges", "fisc", "revente", "bien", "invest"]) await p.click(`[data-sec="${sec}"]`);
   verif((await p.$$("#form .fld")).length > 5, "les 7 sections des hypothèses s'ouvrent");
   const attendus = { treso: "#tr-t tbody tr", emprunt: "#c-loan", fisc: "#fi-t tbody tr", comparatif: "#cp-t tbody tr", revente: "#rv-s .stat", synthese: "#syn-facts .r" };
   for (const [tab, sel] of Object.entries(attendus)) { await p.click(`[data-ana="${tab}"]`); await p.waitForTimeout(60); const n = (await p.$$(sel)).length; verif(n > 0, `analyse « ${tab} » affichée (${n} éléments)`); }
@@ -109,11 +113,67 @@ try {
   verif(p.erreurs.length === 0, "aucune erreur JavaScript (ordinateur)", p.erreurs.slice(0, 3).join(" | "));
   await p.context().close();
 
-  // 8. Mobile et thème sombre : pas de débordement, pas d'erreur
+  // 8. Nouvelle simulation : champs vides, valeurs estimées en gris, repères cliquables
+  {
+    const q = await page(1440, 900);
+    await q.click("#btn-new"); await q.waitForTimeout(60);
+    const nv = o => Object.assign(JSON.parse(JSON.stringify(E.NOUVELLE_SIM)), o);
+    verif(await q.inputValue("#f-surface") === "" && (await q.getAttribute("#f-surface", "placeholder")) !== "" && await q.$eval("#f-surface", e => e.closest(".inp").classList.contains("est")),
+      "nouvelle simulation : surface vide, estimation en gris marquée « estimé »");
+    await q.fill("#t-ville", "Reims (51)"); await q.waitForTimeout(80);
+    const Rr = E.simuler(nv({ ville: "Reims (51)" }));
+    verif((await texte(q, "#market")).includes("Reims (51)") && await q.$eval("#fld-dept", e => e.hidden), "ville reconnue : encadré du marché de Reims, département inutile");
+    verif(!(await q.$eval("#estbar", e => e.hidden)) && (await texte(q, "#estbar")).includes("Reims (51)"), "bandeau « Résultat estimé » affiché");
+    verif(await texte(q, "#k-v1") === norm(eur(Rr.Y[1].cf) + " / an"), "résultat estimé identique au moteur", await texte(q, "#k-v1"));
+    await q.click('#estbar [data-goto="loyer"]'); await q.waitForTimeout(80);
+    verif(await q.evaluate(() => document.activeElement && document.activeElement.id) === "f-loyer", "bandeau : clic sur « Loyer » → champ du loyer");
+    verif(await q.inputValue("#f-loyer") === "" && chiffres(await q.getAttribute("#f-loyer", "placeholder")) === String(Math.round(Rr.s.loyer)), "loyer vide, loyer de marché en gris (" + Math.round(Rr.s.loyer) + " €)");
+    const chips = await q.$$eval('[data-tiers="loyer"] .tier', l => l.map(b => +b.dataset.v));
+    verif(chips.length === 3 && chips[0] < chips[1] && chips[1] < chips[2], "trois repères de loyer croissants", chips.join(" / "));
+    await q.click('[data-tiers="loyer"] .tier'); await q.waitForTimeout(60);
+    const Rp = E.simuler(nv({ ville: "Reims (51)", loyer: chips[0] }));
+    verif(chiffres(await q.inputValue("#f-loyer")) === String(chips[0]) && await texte(q, "#k-v1") === norm(eur(Rp.Y[1].cf) + " / an"), "clic sur le repère « Prudent » : loyer rempli et résultat recalculé");
+    await q.fill("#f-loyer", ""); await q.locator("#f-loyer").blur(); await q.waitForTimeout(60);
+    verif(await q.inputValue("#f-loyer") === "" && await texte(q, "#k-v1") === norm(eur(Rr.Y[1].cf) + " / an"), "champ vidé : retour à l'estimation");
+    await q.fill("#f-loyer", String(Rr.s.loyer)); await q.waitForTimeout(60);
+    verif(await texte(q, "#k-v1") === norm(eur(Rr.Y[1].cf) + " / an"), "taper l'estimation ne change pas le résultat");
+    await q.fill("#f-loyer", ""); await q.waitForTimeout(40);
+    await q.click('[data-sec="bien"]'); await q.fill("#t-ville", "Trifouilly-les-Oies"); await q.waitForTimeout(60);
+    verif(!(await q.$eval("#fld-dept", e => e.hidden)), "ville inconnue : choix du département proposé");
+    await q.selectOption("#s-dept", "23"); await q.waitForTimeout(60);
+    verif((await texte(q, "#market")).includes("Creuse"), "département choisi : repères de la Creuse");
+    await q.reload(); await q.waitForSelector("#k-v1"); await q.click('[data-sec="expl"]');
+    verif(await q.inputValue("#f-loyer") === "" && (await q.getAttribute("#f-loyer", "placeholder")) !== "", "après rechargement, le loyer reste vide (estimé)");
+    await q.click('[data-mode="rapide"]'); await q.waitForTimeout(40);
+    await q.fill("#t-ville", "Paris 15e"); await q.waitForTimeout(80);
+    const Rq = E.simuler(nv({ ville: "Paris 15e", mode: "rapide" }));
+    verif(chiffres(await texte(q, '[data-live="notaire"]')) === chiffres(eur(Rq.notaire.total)), "estimation rapide : frais de notaire mis à jour avec la ville", await texte(q, '[data-live="notaire"]'));
+    await q.click('[data-mode="complet"]');
+    verif(q.erreurs.length === 0, "estimations : aucune erreur JavaScript", q.erreurs.slice(0, 3).join(" | "));
+    await q.context().close();
+  }
+
+  // 9. Ordinateur portable (écran bas) : le formulaire des hypothèses défile jusqu'en bas
+  for (const [w, h] of [[1280, 720], [1440, 640]]) {
+    const q = await page(w, h);
+    await q.click('[data-sec="invest"]');
+    const r = await q.evaluate(() => {
+      const f = document.getElementById("form"), hy = document.querySelector(".hyp");
+      window.scrollTo(0, 400); // la carte se colle sous le bandeau
+      const avant = { sh: f.scrollHeight, ch: f.clientHeight };
+      f.scrollTop = f.scrollHeight;
+      const der = f.lastElementChild.getBoundingClientRect(), hb = hy.getBoundingClientRect();
+      return { ...avant, derBas: Math.round(der.bottom), hypBas: Math.round(hb.bottom), vh: innerHeight };
+    });
+    verif(r.sh > r.ch && r.derBas <= r.hypBas + 1 && r.hypBas <= r.vh + 1, `${w}×${h} : le formulaire défile et son bas est atteignable`, JSON.stringify(r));
+    await q.context().close();
+  }
+
+  // 10. Mobile et thème sombre : pas de débordement, pas d'erreur
   for (const [w, h, sc] of [[390, 844, "light"], [390, 844, "dark"], [1024, 768, "dark"]]) {
     const q = await page(w, h, sc); let deb = 0;
     for (const tab of ["synthese", "treso", "emprunt", "fisc", "comparatif", "revente"]) { await q.click(`[data-ana="${tab}"]`); deb = Math.max(deb, await q.evaluate(() => document.documentElement.scrollWidth - innerWidth)); }
-    for (const sec of ["fin", "expl", "charges", "fisc", "revente", "infos"]) { await q.click(`[data-sec="${sec}"]`); deb = Math.max(deb, await q.evaluate(() => document.documentElement.scrollWidth - innerWidth)); }
+    for (const sec of ["bien", "invest", "fin", "expl", "charges", "fisc", "revente"]) { await q.click(`[data-sec="${sec}"]`); deb = Math.max(deb, await q.evaluate(() => document.documentElement.scrollWidth - innerWidth)); }
     verif(deb <= 1, `${w}×${h} ${sc === "dark" ? "sombre" : "clair"} : aucun défilement horizontal`, deb + " px");
     verif(q.erreurs.length === 0, `${w}×${h} ${sc === "dark" ? "sombre" : "clair"} : aucune erreur JavaScript`, q.erreurs.slice(0, 3).join(" | "));
     await q.context().close();
